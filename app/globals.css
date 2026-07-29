@@ -2562,3 +2562,924 @@ fieldset {
   .table-tools label { flex: 1; }
   .admin-table-panel table { min-width: 700px; }
 }
+
+/* Modern contrast refresh */
+:root {
+  --ink: #111827;
+  --ink-soft: #374151;
+  --forest: #4f46e5;
+  --forest-deep: #312e81;
+  --sage: #93c5fd;
+  --mint: #eef2ff;
+  --cream: #f7f7fb;
+  --paper: #ffffff;
+  --gold: #f59e0b;
+  --line: #d7dce8;
+  --shadow: 0 18px 50px rgba(15, 23, 42, 0.1);
+}
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus {
+  outline-color: rgba(79, 70, 229, 0.65);
+}
+
+.site-header {
+  background: rgba(255, 255, 255, 0.92);
+  border-bottom-color: #e5e7eb;
+}
+
+.brand-mark,
+.nav-links button:hover,
+.nav-links a:hover,
+.nav-links .nav-cta,
+.section-kicker,
+.preview-icon,
+.score-number,
+.score-main strong,
+.score-detail > div strong,
+.party-result strong,
+.issue-score,
+.ledger-number,
+.admin-header a,
+.release-state strong,
+.release-state > svg,
+.feedback-panel > p b {
+  color: var(--forest);
+}
+
+.nav-links .nav-cta,
+.confidence-pill,
+.score-icon,
+.answer-choice.selected,
+.save-icon,
+.release-state,
+.strength-icon.strong,
+.answer-ledger summary span,
+.rating-options button:hover {
+  background: #eef2ff;
+}
+
+.hero {
+  background:
+    radial-gradient(circle at 82% 36%, rgba(14, 165, 233, 0.18), transparent 28%),
+    radial-gradient(circle at 16% 12%, rgba(245, 158, 11, 0.13), transparent 24%),
+    linear-gradient(120deg, #ffffff 0%, #f8fafc 48%, #eef2ff 100%);
+}
+
+.hero-copy,
+.section-heading p,
+.preview-card p,
+.process-grid p,
+.privacy-card p,
+.quiz-aside p,
+.context-note,
+.importance-fieldset p,
+.quiz-privacy,
+.chart-caption,
+.result-section-heading > p,
+.score-main span,
+.score-detail > p,
+.score-detail > div span,
+.party-reveal p,
+.party-result p,
+.party-result small,
+.core-values p,
+.strength-row p,
+.interpretation p,
+.issue-toggle p,
+.education-grid p,
+.influencing p,
+.ledger-detail > p,
+.save-result-card p,
+.admin-welcome p,
+.admin-metrics article p,
+.panel-header p,
+.table-title p,
+.feedback-panel > p {
+  color: #374151;
+}
+
+.eyebrow,
+.card-kicker,
+.question-label,
+.answer-fieldset legend,
+.importance-fieldset legend,
+.axis-ends small,
+.map-label,
+.radar-chart text,
+.score-detail > small,
+.reading h4,
+.admin-metrics article > div,
+.panel-header span,
+.table-title > div > span,
+.admin-table-panel th,
+.table-footer,
+.feedback-bars > div {
+  color: #4b5563;
+}
+
+.button.primary,
+.admin-primary,
+.nav-links .nav-cta:hover {
+  background: linear-gradient(135deg, #4f46e5, #2563eb);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.22);
+}
+
+.button.primary:hover,
+.admin-primary:hover {
+  background: linear-gradient(135deg, #4338ca, #1d4ed8);
+}
+
+.button.secondary,
+.button.ghost,
+.tab-list button,
+.rating-options button,
+.table-tools label,
+.save-form input {
+  color: #1f2937;
+  border-color: #cbd5e1;
+}
+
+.button.secondary {
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.button.ghost {
+  background: transparent;
+}
+
+.intro-strip,
+.results-hero,
+.admin-sidebar {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(14, 165, 233, 0.22), transparent 28%),
+    linear-gradient(135deg, #111827, #312e81 58%, #1e3a8a);
+  color: #ffffff;
+}
+
+.results-hero > p,
+.result-caveat,
+.admin-sidebar nav button,
+.admin-brand small,
+.admin-user small,
+.admin-user > svg {
+  color: #e5e7eb;
+}
+
+.eyebrow.light {
+  color: #bfdbfe;
+}
+
+.result-caveat {
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.result-card,
+.score-card,
+.issue-card,
+.preview-card,
+.privacy-card,
+.question-card,
+.save-result-card,
+.accuracy-card,
+.admin-panel,
+.admin-metrics article,
+.admin-table-panel,
+.confidence-panel {
+  background: #ffffff;
+  border-color: #e5e7eb;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+}
+
+.mini-axis b,
+.score-card.open,
+.answer-choice.selected,
+.importance-grid button.selected,
+.save-form input:focus,
+.rating-options button:hover {
+  border-color: #4f46e5;
+}
+
+.mini-axis,
+.axis-bar i {
+  background: linear-gradient(90deg, #06b6d4, #e5e7eb 50%, #f59e0b);
+}
+
+.mini-axis b,
+.axis-bar b,
+.map-point,
+.map-point span,
+.feedback-bars i b,
+.line-chart .chart-start,
+.category-tag.teal,
+.status-dot.published i {
+  background: #4f46e5;
+}
+
+.political-map {
+  background:
+    linear-gradient(90deg, rgba(14, 165, 233, 0.1) 50%, rgba(245, 158, 11, 0.11) 50%),
+    linear-gradient(rgba(99, 102, 241, 0.08) 50%, transparent 50%);
+  border-color: #d8dee9;
+}
+
+.radar-value {
+  fill: rgba(79, 70, 229, 0.18);
+  stroke: #4f46e5;
+}
+
+.radar-dot,
+.eyebrow-dot,
+.needle span,
+.core-values li i,
+.confidence-donut {
+  background: #f59e0b;
+}
+
+.compass-art .orbit,
+.orbit,
+.needle {
+  border-color: rgba(79, 70, 229, 0.18);
+}
+
+.direction {
+  color: rgba(79, 70, 229, 0.68);
+}
+
+.admin-sidebar nav button.active {
+  background: #ffffff;
+  color: #312e81;
+}
+
+.admin-user > span,
+.admin-sidebar nav button i,
+.attention-icon.a1,
+.status-dot.editorial-review i {
+  background: #2563eb;
+}
+
+.category-tag.violet,
+.category-tag.green,
+.category-tag.blue {
+  background: #eef2ff;
+  color: #3730a3;
+}
+
+.category-tag.gold,
+.attention-icon.a0 {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.category-tag.red,
+.category-tag.rose,
+.attention-icon.a2 {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+/* Pantone Cloud Dancer powdered pastels palette */
+:root {
+  --ink: #242321;
+  --ink-soft: #4f4b48;
+  --forest: #6f5f66;
+  --forest-deep: #393534;
+  --sage: #c7d0bf;
+  --mint: #d4e4f0;
+  --cream: #f0efec;
+  --paper: #fffdf8;
+  --gold: #b58b30;
+  --line: #d9d6d2;
+  --shadow: 0 18px 50px rgba(36, 35, 33, 0.1);
+}
+
+body {
+  background:
+    linear-gradient(135deg, #f0efec 0%, #f7f4ee 42%, #f3ebc5 100%);
+  color: var(--ink);
+}
+
+.site-header {
+  background: rgba(255, 253, 248, 0.94);
+  border-bottom-color: #d9d6d2;
+}
+
+.brand-mark,
+.nav-links button:hover,
+.nav-links a:hover,
+.nav-links .nav-cta,
+.section-kicker,
+.preview-icon,
+.score-number,
+.score-main strong,
+.score-detail > div strong,
+.party-result strong,
+.issue-score,
+.ledger-number,
+.admin-header a,
+.release-state strong,
+.release-state > svg,
+.feedback-panel > p b {
+  color: #65565d;
+}
+
+.nav-links .nav-cta,
+.confidence-pill,
+.score-icon,
+.answer-choice.selected,
+.save-icon,
+.release-state,
+.strength-icon.strong,
+.answer-ledger summary span,
+.rating-options button:hover {
+  background: #ead8dd;
+  color: #3b3337;
+}
+
+.hero {
+  background:
+    radial-gradient(circle at 80% 34%, rgba(212, 228, 240, 0.78), transparent 29%),
+    radial-gradient(circle at 16% 10%, rgba(234, 210, 194, 0.72), transparent 26%),
+    radial-gradient(circle at 88% 82%, rgba(243, 235, 197, 0.8), transparent 26%),
+    linear-gradient(120deg, #fffdf8 0%, #f0efec 48%, #ead8dd 100%);
+}
+
+.hero-copy,
+.section-heading p,
+.preview-card p,
+.process-grid p,
+.privacy-card p,
+.quiz-aside p,
+.context-note,
+.importance-fieldset p,
+.quiz-privacy,
+.chart-caption,
+.result-section-heading > p,
+.score-main span,
+.score-detail > p,
+.score-detail > div span,
+.party-reveal p,
+.party-result p,
+.party-result small,
+.core-values p,
+.strength-row p,
+.interpretation p,
+.issue-toggle p,
+.education-grid p,
+.influencing p,
+.ledger-detail > p,
+.save-result-card p,
+.admin-welcome p,
+.admin-metrics article p,
+.panel-header p,
+.table-title p,
+.feedback-panel > p {
+  color: #4f4b48;
+}
+
+.eyebrow,
+.card-kicker,
+.question-label,
+.answer-fieldset legend,
+.importance-fieldset legend,
+.axis-ends small,
+.map-label,
+.radar-chart text,
+.score-detail > small,
+.reading h4,
+.admin-metrics article > div,
+.panel-header span,
+.table-title > div > span,
+.admin-table-panel th,
+.table-footer,
+.feedback-bars > div {
+  color: #5f5a55;
+}
+
+.button.primary,
+.admin-primary,
+.nav-links .nav-cta:hover {
+  background: linear-gradient(135deg, #65565d, #393534);
+  color: #fffdf8;
+  border-color: transparent;
+  box-shadow: 0 12px 28px rgba(57, 53, 52, 0.22);
+}
+
+.button.primary:hover,
+.admin-primary:hover {
+  background: linear-gradient(135deg, #51464c, #272421);
+}
+
+.button.secondary,
+.button.ghost,
+.tab-list button,
+.rating-options button,
+.table-tools label,
+.save-form input {
+  color: #242321;
+  border-color: #c9c3bd;
+}
+
+.button.secondary {
+  background: rgba(255, 253, 248, 0.9);
+}
+
+.button.ghost {
+  background: rgba(255, 253, 248, 0.5);
+}
+
+.intro-strip,
+.results-hero,
+.admin-sidebar {
+  background:
+    radial-gradient(circle at 14% 10%, rgba(212, 228, 240, 0.22), transparent 28%),
+    radial-gradient(circle at 84% 24%, rgba(234, 216, 221, 0.18), transparent 24%),
+    linear-gradient(135deg, #242321, #4b4448 58%, #65565d);
+  color: #fffdf8;
+}
+
+.results-hero > p,
+.result-caveat,
+.admin-sidebar nav button,
+.admin-brand small,
+.admin-user small,
+.admin-user > svg {
+  color: #f4f0ec;
+}
+
+.eyebrow.light {
+  color: #f3ebc5;
+}
+
+.result-caveat {
+  background: rgba(255, 253, 248, 0.12);
+  border-color: rgba(255, 253, 248, 0.22);
+}
+
+.result-card,
+.score-card,
+.issue-card,
+.preview-card,
+.privacy-card,
+.question-card,
+.save-result-card,
+.accuracy-card,
+.admin-panel,
+.admin-metrics article,
+.admin-table-panel,
+.confidence-panel {
+  background: #fffdf8;
+  border-color: #ddd8d2;
+  box-shadow: 0 12px 32px rgba(36, 35, 33, 0.07);
+}
+
+.score-detail,
+.party-result,
+.ledger-detail,
+.education-grid > div,
+.rating-options button,
+.feedback-bars i {
+  background: #f0efec;
+}
+
+.mini-axis b,
+.score-card.open,
+.answer-choice.selected,
+.importance-grid button.selected,
+.save-form input:focus,
+.rating-options button:hover {
+  border-color: #65565d;
+}
+
+.mini-axis,
+.axis-bar i {
+  background: linear-gradient(90deg, #d4e4f0, #f0efec 46%, #f3ebc5);
+}
+
+.mini-axis b,
+.axis-bar b,
+.map-point,
+.map-point span,
+.feedback-bars i b,
+.line-chart .chart-start,
+.category-tag.teal,
+.status-dot.published i {
+  background: #65565d;
+}
+
+.political-map {
+  background:
+    linear-gradient(90deg, rgba(212, 228, 240, 0.55) 50%, rgba(243, 235, 197, 0.6) 50%),
+    linear-gradient(rgba(234, 216, 221, 0.48) 50%, transparent 50%);
+  border-color: #d7d2cc;
+}
+
+.radar-value {
+  fill: rgba(101, 86, 93, 0.18);
+  stroke: #65565d;
+}
+
+.radar-dot,
+.eyebrow-dot,
+.needle span,
+.core-values li i,
+.confidence-donut {
+  background: #b58b30;
+}
+
+.compass-art .orbit,
+.orbit,
+.needle {
+  border-color: rgba(101, 86, 93, 0.2);
+}
+
+.direction {
+  color: rgba(101, 86, 93, 0.72);
+}
+
+.admin-sidebar nav button.active {
+  background: #fffdf8;
+  color: #393534;
+}
+
+.admin-user > span,
+.admin-sidebar nav button i,
+.attention-icon.a1,
+.status-dot.editorial-review i {
+  background: #6f7f8c;
+}
+
+.category-tag.violet,
+.category-tag.green,
+.category-tag.blue {
+  background: #d4e4f0;
+  color: #344757;
+}
+
+.category-tag.gold,
+.attention-icon.a0 {
+  background: #f3ebc5;
+  color: #6b4f13;
+}
+
+.category-tag.red,
+.category-tag.rose,
+.attention-icon.a2 {
+  background: #ead8dd;
+  color: #6e3f4d;
+}
+
+.strength-icon.moderate {
+  background: #f3ebc5;
+  color: #6b4f13;
+}
+
+.strength-icon.mixed {
+  background: #d4e4f0;
+  color: #344757;
+}
+
+.strength-icon.uncertain {
+  background: #d8d2da;
+  color: #514952;
+}
+
+/* Tropical palette + Inter/Lato/Roboto typography */
+:root {
+  --font-sans: Inter, Lato, Roboto, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-serif: Inter, Lato, Roboto, "Segoe UI", Helvetica, Arial, sans-serif;
+  --ink: #10212b;
+  --ink-soft: #314653;
+  --forest: #007f8f;
+  --forest-deep: #004f5d;
+  --sage: #78d8d8;
+  --mint: #d8f090;
+  --cream: #fffdf2;
+  --paper: #ffffff;
+  --gold: #ffa830;
+  --line: #cfdfe2;
+  --shadow: 0 18px 50px rgba(16, 33, 43, 0.12);
+}
+
+body {
+  background:
+    radial-gradient(circle at 8% 8%, rgba(120, 216, 216, 0.32), transparent 25%),
+    radial-gradient(circle at 90% 12%, rgba(255, 168, 48, 0.22), transparent 24%),
+    linear-gradient(135deg, #ffffff 0%, #fffff0 44%, #f0f0a8 100%);
+  color: var(--ink);
+  font-family: var(--font-sans), sans-serif;
+}
+
+.brand,
+.hero h1,
+.section-heading h2,
+.process-grid h3,
+.privacy-card h2,
+.final-cta h2,
+.question-card h1,
+.quiz-aside h2,
+.results-hero h1,
+.result-card h2,
+.result-section h2,
+.interpretation h2,
+.issue-toggle h3,
+.admin-welcome h1,
+.admin-panel h2,
+.admin-metrics article strong {
+  font-family: var(--font-sans), sans-serif;
+  letter-spacing: 0;
+}
+
+.site-header {
+  background: rgba(255, 255, 255, 0.93);
+  border-bottom-color: #d8e6e8;
+}
+
+.brand-mark,
+.nav-links button:hover,
+.nav-links a:hover,
+.nav-links .nav-cta,
+.section-kicker,
+.preview-icon,
+.score-number,
+.score-main strong,
+.score-detail > div strong,
+.party-result strong,
+.issue-score,
+.ledger-number,
+.admin-header a,
+.release-state strong,
+.release-state > svg,
+.feedback-panel > p b {
+  color: #007f8f;
+}
+
+.nav-links .nav-cta,
+.confidence-pill,
+.score-icon,
+.answer-choice.selected,
+.save-icon,
+.release-state,
+.strength-icon.strong,
+.answer-ledger summary span,
+.rating-options button:hover {
+  background: #dff7f7;
+  color: #083845;
+}
+
+.hero {
+  background:
+    radial-gradient(circle at 77% 35%, rgba(72, 192, 216, 0.38), transparent 28%),
+    radial-gradient(circle at 18% 12%, rgba(255, 168, 48, 0.28), transparent 25%),
+    radial-gradient(circle at 88% 82%, rgba(240, 96, 120, 0.2), transparent 25%),
+    linear-gradient(120deg, #ffffff 0%, #fffff0 46%, #d8f090 100%);
+}
+
+.hero-copy,
+.section-heading p,
+.preview-card p,
+.process-grid p,
+.privacy-card p,
+.quiz-aside p,
+.context-note,
+.importance-fieldset p,
+.quiz-privacy,
+.chart-caption,
+.result-section-heading > p,
+.score-main span,
+.score-detail > p,
+.score-detail > div span,
+.party-reveal p,
+.party-result p,
+.party-result small,
+.core-values p,
+.strength-row p,
+.interpretation p,
+.issue-toggle p,
+.education-grid p,
+.influencing p,
+.ledger-detail > p,
+.save-result-card p,
+.admin-welcome p,
+.admin-metrics article p,
+.panel-header p,
+.table-title p,
+.feedback-panel > p {
+  color: #314653;
+}
+
+.eyebrow,
+.card-kicker,
+.question-label,
+.answer-fieldset legend,
+.importance-fieldset legend,
+.axis-ends small,
+.map-label,
+.radar-chart text,
+.score-detail > small,
+.reading h4,
+.admin-metrics article > div,
+.panel-header span,
+.table-title > div > span,
+.admin-table-panel th,
+.table-footer,
+.feedback-bars > div {
+  color: #435863;
+}
+
+.button.primary,
+.admin-primary,
+.nav-links .nav-cta:hover {
+  background: linear-gradient(135deg, #007f8f, #004f5d);
+  color: #ffffff;
+  border-color: transparent;
+  box-shadow: 0 12px 28px rgba(0, 127, 143, 0.24);
+}
+
+.button.primary:hover,
+.admin-primary:hover {
+  background: linear-gradient(135deg, #006d7a, #003f4a);
+}
+
+.button.secondary,
+.button.ghost,
+.tab-list button,
+.rating-options button,
+.table-tools label,
+.save-form input {
+  color: #10212b;
+  border-color: #b9d3d8;
+}
+
+.button.secondary {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.button.ghost {
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.intro-strip,
+.results-hero,
+.admin-sidebar {
+  background:
+    radial-gradient(circle at 12% 12%, rgba(120, 216, 216, 0.22), transparent 28%),
+    radial-gradient(circle at 86% 22%, rgba(255, 168, 48, 0.2), transparent 24%),
+    linear-gradient(135deg, #10212b, #004f5d 58%, #007f8f);
+  color: #ffffff;
+}
+
+.results-hero > p,
+.result-caveat,
+.admin-sidebar nav button,
+.admin-brand small,
+.admin-user small,
+.admin-user > svg {
+  color: #eefcff;
+}
+
+.eyebrow.light {
+  color: #f0f0a8;
+}
+
+.result-caveat {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.result-card,
+.score-card,
+.issue-card,
+.preview-card,
+.privacy-card,
+.question-card,
+.save-result-card,
+.accuracy-card,
+.admin-panel,
+.admin-metrics article,
+.admin-table-panel,
+.confidence-panel {
+  background: #ffffff;
+  border-color: #d8e6e8;
+  box-shadow: 0 12px 32px rgba(16, 33, 43, 0.07);
+}
+
+.score-detail,
+.party-result,
+.ledger-detail,
+.education-grid > div,
+.rating-options button,
+.feedback-bars i {
+  background: #f5fbfb;
+}
+
+.mini-axis b,
+.score-card.open,
+.answer-choice.selected,
+.importance-grid button.selected,
+.save-form input:focus,
+.rating-options button:hover {
+  border-color: #007f8f;
+}
+
+.mini-axis,
+.axis-bar i {
+  background: linear-gradient(90deg, #48c0d8, #d8f090 48%, #ffa830);
+}
+
+.mini-axis b,
+.axis-bar b,
+.map-point,
+.map-point span,
+.feedback-bars i b,
+.line-chart .chart-start,
+.category-tag.teal,
+.status-dot.published i {
+  background: #007f8f;
+}
+
+.political-map {
+  background:
+    linear-gradient(90deg, rgba(72, 192, 216, 0.18) 50%, rgba(255, 168, 48, 0.18) 50%),
+    linear-gradient(rgba(240, 96, 120, 0.12) 50%, transparent 50%);
+  border-color: #cbdfe3;
+}
+
+.radar-value {
+  fill: rgba(0, 127, 143, 0.18);
+  stroke: #007f8f;
+}
+
+.radar-dot,
+.eyebrow-dot,
+.needle span,
+.core-values li i,
+.confidence-donut {
+  background: #ffa830;
+}
+
+.compass-art .orbit,
+.orbit,
+.needle {
+  border-color: rgba(0, 127, 143, 0.2);
+}
+
+.direction {
+  color: rgba(0, 127, 143, 0.75);
+}
+
+.admin-sidebar nav button.active {
+  background: #ffffff;
+  color: #004f5d;
+}
+
+.admin-user > span,
+.admin-sidebar nav button i,
+.attention-icon.a1,
+.status-dot.editorial-review i {
+  background: #48c0d8;
+}
+
+.category-tag.violet,
+.category-tag.green,
+.category-tag.blue {
+  background: #dff7f7;
+  color: #004f5d;
+}
+
+.category-tag.gold,
+.attention-icon.a0 {
+  background: #fff3cc;
+  color: #6f4300;
+}
+
+.category-tag.red,
+.category-tag.rose,
+.attention-icon.a2 {
+  background: #ffe4e9;
+  color: #8e2f43;
+}
+
+.strength-icon.moderate {
+  background: #fff3cc;
+  color: #6f4300;
+}
+
+.strength-icon.mixed {
+  background: #dff7f7;
+  color: #004f5d;
+}
+
+.strength-icon.uncertain {
+  background: #eef2d5;
+  color: #455019;
+}
