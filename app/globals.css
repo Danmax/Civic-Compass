@@ -1593,6 +1593,72 @@ fieldset {
   border-top: 1px solid #dedfd8;
 }
 
+.result-followup {
+  max-width: 1172px;
+  margin: 0 auto;
+  padding: 0 24px 55px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.save-result-card,
+.accuracy-card {
+  padding: 28px 30px;
+  background: var(--paper);
+  border: 1px solid #dee1db;
+  border-radius: 11px;
+}
+
+.save-result-card {
+  display: grid;
+  grid-template-columns: 45px 1fr auto;
+  gap: 16px;
+  align-items: center;
+}
+
+.save-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  background: #e6f0e9;
+  color: var(--forest);
+  border-radius: 50%;
+}
+
+.save-icon svg { width: 19px; }
+.save-result-card h2, .accuracy-card h2 { margin: 6px 0 5px; font-family: var(--font-serif), serif; font-size: 19px; font-weight: 500; }
+.save-result-card p { margin: 0; color: #768179; font-size: 9px; line-height: 1.5; }
+.save-result-card .button { min-height: 38px; padding: 0 13px; font-size: 9px; }
+
+.accuracy-card h2 { margin-bottom: 18px; }
+.rating-options { display: flex; flex-wrap: wrap; gap: 6px; }
+.rating-options button {
+  min-height: 31px;
+  padding: 0 10px;
+  background: #f5f6f2;
+  color: #66736b;
+  border: 1px solid #dfe2dc;
+  border-radius: 5px;
+  font-size: 8px;
+  cursor: pointer;
+}
+.rating-options button:hover { color: var(--forest); border-color: #91aa9b; }
+.thanks-message {
+  min-height: 45px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  background: #e8f1eb;
+  color: var(--forest);
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 600;
+}
+.thanks-message svg { width: 17px; }
+
 .results-actions h2 {
   margin: 0;
   font-family: var(--font-serif), serif;
@@ -1889,6 +1955,7 @@ fieldset {
   .quiz-layout { grid-template-columns: 1fr; gap: 25px; padding-top: 28px; }
   .quiz-aside { display: none; }
   .result-summary-grid, .values-grid { grid-template-columns: 1fr; }
+  .result-followup { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 650px) {
@@ -1932,12 +1999,40 @@ fieldset {
   .political-map { width: calc(100% - 50px); }
   .interpretation { padding: 34px 25px; }
   .results-actions { align-items: stretch; flex-direction: column; gap: 20px; }
+  .result-followup { padding: 0 13px 40px; }
+  .save-result-card { grid-template-columns: 42px 1fr; padding: 23px 20px; }
+  .save-result-card .button { grid-column: 1 / -1; }
   .education-grid { grid-template-columns: 1fr; }
   .issue-toggle { grid-template-columns: 48px 1fr auto; padding: 17px 14px; gap: 10px; }
   .issue-toggle p { display: none; }
   .influencing > div { grid-template-columns: 1fr; gap: 4px; }
   .ledger-detail { padding: 17px 20px; }
   .weight-table, .weight-row { grid-template-columns: 1fr 0.75fr 0.35fr; }
+}
+
+@media print {
+  .site-header,
+  .results-nav,
+  .results-actions,
+  .result-followup {
+    display: none !important;
+  }
+
+  .results-shell,
+  .results-content {
+    background: white;
+  }
+
+  .results-content {
+    max-width: none;
+    padding: 24px;
+  }
+
+  .result-card,
+  .score-card {
+    break-inside: avoid;
+    box-shadow: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

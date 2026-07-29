@@ -7,6 +7,7 @@ import {
   BarChart3,
   BookOpen,
   Check,
+  CheckCircle2,
   ChevronDown,
   Compass,
   Download,
@@ -24,7 +25,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ANSWERS,
   CATEGORIES,
@@ -270,7 +271,6 @@ function Quiz({
   const question = QUESTIONS[index];
   const answer = answers[question.id];
   const important = importance[question.id] ?? 1;
-  const categoryIndex = CATEGORY_ORDER.indexOf(question.category) + 1;
   const answered = Object.keys(answers).length;
 
   const next = () => {
@@ -297,16 +297,19 @@ function Quiz({
       </div>
       <div className="quiz-layout">
         <aside className="quiz-aside">
-          <span className="topic-count">Topic {categoryIndex} of {CATEGORY_ORDER.length}</span>
+          <span className="topic-count">Current focus</span>
           <h2>{CATEGORIES[question.category].name}</h2>
           <p>{CATEGORIES[question.category].description}</p>
           <div className="topic-list">
-            {CATEGORY_ORDER.map((key, i) => (
-              <span key={key} className={i === categoryIndex - 1 ? "active" : i < categoryIndex - 1 ? "done" : ""}>
-                <i>{i < categoryIndex - 1 ? <Check size={12} /> : i + 1}</i>
-                {CATEGORIES[key].short}
-              </span>
-            ))}
+            {CATEGORY_ORDER.map((key, i) => {
+              const complete = QUESTIONS.filter((item) => item.category === key).every((item) => item.id in answers);
+              return (
+                <span key={key} className={key === question.category ? "active" : complete ? "done" : ""}>
+                  <i>{complete ? <Check size={12} /> : i + 1}</i>
+                  {CATEGORIES[key].short}
+                </span>
+              );
+            })}
           </div>
         </aside>
         <section className="question-card">
@@ -473,6 +476,8 @@ function Results({
   const [tab, setTab] = useState<ResultTab>("overview");
   const [expandedDimension, setExpandedDimension] = useState<DimensionKey | null>("economic");
   const [expandedCategory, setExpandedCategory] = useState<CategoryKey | null>("economy");
+  const [saved, setSaved] = useState(false);
+  const [rating, setRating] = useState<string | null>(null);
   const { scores, counts } = useMemo(() => scoreAnswers(answers, importance), [answers, importance]);
   const answeredValues = Object.values(answers);
   const answeredCount = answeredValues.filter((v) => v !== null && v !== undefined).length;
@@ -531,7 +536,7 @@ function Results({
             </button>
           ))}
         </div>
-        <button className="button export"><Download size={16} /> Export report</button>
+        <button className="button export" onClick={() => window.print()}><Download size={16} /> Export report</button>
       </div>
 
       {tab === "overview" && (
@@ -747,6 +752,55 @@ function Results({
         </div>
       )}
 
+      <section className="result-followup">
+        <article className="save-result-card">
+          <div className="save-icon"><LockKeyhole /></div>
+          <div>
+            <span className="card-kicker">Your choice</span>
+            <h2>{saved ? "Saved in this browser" : "Keep this snapshot?"}</h2>
+            <p>
+              {saved
+                ? "This profile is stored only on this device. You can remove it at any time."
+                : "Saving is optional. Nothing leaves this browser and no account is required."}
+            </p>
+          </div>
+          {saved ? (
+            <button
+              className="button secondary"
+              onClick={() => {
+                localStorage.removeItem("civic-compass-profile");
+                setSaved(false);
+              }}
+            >
+              Delete saved result
+            </button>
+          ) : (
+            <button
+              className="button primary"
+              onClick={() => {
+                localStorage.setItem("civic-compass-profile", JSON.stringify({ answers, importance, savedAt: new Date().toISOString() }));
+                setSaved(true);
+              }}
+            >
+              Save on this device
+            </button>
+          )}
+        </article>
+        <article className="accuracy-card">
+          <span className="card-kicker">Help us improve</span>
+          <h2>How accurately does this profile represent your beliefs?</h2>
+          {rating ? (
+            <div className="thanks-message"><CheckCircle2 /> Thank you. Your feedback helps improve question quality.</div>
+          ) : (
+            <div className="rating-options">
+              {["Very accurately", "Mostly accurately", "Somewhat accurately", "Not very accurately", "Not accurately at all"].map((option) => (
+                <button key={option} onClick={() => setRating(option)}>{option}</button>
+              ))}
+            </div>
+          )}
+        </article>
+      </section>
+
       <section className="results-actions">
         <div><h2>Your profile is a snapshot, not a verdict.</h2><p>Views evolve. Retake anytime to see what changed.</p></div>
         <button className="button secondary" onClick={onRetake}><RotateCcw size={16} /> Retake assessment</button>
@@ -779,6 +833,17 @@ export default function App() {
     setScreen("results");
     window.scrollTo(0, 0);
   };
+
+  useEffect(() => {
+    const preview = new URLSearchParams(window.location.search).get("preview");
+    if (preview === "results") sample();
+    if (preview === "quiz") {
+      setScreen("quiz");
+      window.scrollTo(0, 0);
+    }
+    // Preview URLs are intentionally read once on initial load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const home = () => {
     setScreen("home");
