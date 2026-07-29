@@ -1632,6 +1632,53 @@ fieldset {
 .save-result-card p { margin: 0; color: #768179; font-size: 9px; line-height: 1.5; }
 .save-result-card .button { min-height: 38px; padding: 0 13px; font-size: 9px; }
 
+.save-form {
+  min-width: 210px;
+}
+
+.save-form label > span {
+  display: block;
+  margin-bottom: 5px;
+  color: #68756d;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.save-form input {
+  width: 100%;
+  height: 35px;
+  padding: 0 10px;
+  background: white;
+  border: 1px solid #ccd5ce;
+  border-radius: 5px;
+  font-size: 9px;
+  outline: none;
+}
+
+.save-form input:focus {
+  border-color: var(--forest);
+  box-shadow: 0 0 0 3px rgba(31, 89, 68, .1);
+}
+
+.save-form > small {
+  display: block;
+  margin-top: 4px;
+  color: #9a4940;
+  font-size: 8px;
+}
+
+.save-form > div {
+  margin-top: 7px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.save-form .button {
+  min-height: 30px;
+  padding: 0 9px;
+}
+
 .accuracy-card h2 { margin-bottom: 18px; }
 .rating-options { display: flex; flex-wrap: wrap; gap: 6px; }
 .rating-options button {
@@ -2002,6 +2049,8 @@ fieldset {
   .result-followup { padding: 0 13px 40px; }
   .save-result-card { grid-template-columns: 42px 1fr; padding: 23px 20px; }
   .save-result-card .button { grid-column: 1 / -1; }
+  .save-form { min-width: 0; grid-column: 1 / -1; }
+  .save-form .button { grid-column: auto; }
   .education-grid { grid-template-columns: 1fr; }
   .issue-toggle { grid-template-columns: 48px 1fr auto; padding: 17px 14px; gap: 10px; }
   .issue-toggle p { display: none; }

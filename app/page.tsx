@@ -396,6 +396,49 @@ function scoreAnswers(answers: AnswerMap, importance: ImportanceMap) {
   return { scores, counts };
 }
 
+function bytesToBase64(bytes: Uint8Array) {
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
+}
+
+async function encryptProfile(payload: object, passphrase: string) {
+  const encoder = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(passphrase),
+    "PBKDF2",
+    false,
+    ["deriveKey"],
+  );
+  const key = await crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations: 250_000, hash: "SHA-256" },
+    keyMaterial,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt"],
+  );
+  const encrypted = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    encoder.encode(JSON.stringify(payload)),
+  );
+
+  return {
+    version: 1,
+    algorithm: "AES-GCM",
+    keyDerivation: "PBKDF2-SHA256",
+    iterations: 250_000,
+    salt: bytesToBase64(salt),
+    iv: bytesToBase64(iv),
+    ciphertext: bytesToBase64(new Uint8Array(encrypted)),
+  };
+}
+
 function strengthLabel(score: number) {
   const abs = Math.abs(score);
   if (abs < 12) return "Balanced";
@@ -477,6 +520,10 @@ function Results({
   const [expandedDimension, setExpandedDimension] = useState<DimensionKey | null>("economic");
   const [expandedCategory, setExpandedCategory] = useState<CategoryKey | null>("economy");
   const [saved, setSaved] = useState(false);
+  const [savePrompt, setSavePrompt] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [passphrase, setPassphrase] = useState("");
+  const [saveError, setSaveError] = useState("");
   const [rating, setRating] = useState<string | null>(null);
   const { scores, counts } = useMemo(() => scoreAnswers(answers, importance), [answers, importance]);
   const answeredValues = Object.values(answers);
@@ -508,6 +555,10 @@ function Results({
 
   const leaningEconomic = scores.economic > 12 ? "economically market-oriented" : scores.economic < -12 ? "supportive of public investment" : "economically balanced";
   const leaningSocial = scores.social > 12 ? "cautious about rapid social change" : scores.social < -12 ? "open to social reform" : "moderate on social questions";
+
+  useEffect(() => {
+    setSaved(Boolean(localStorage.getItem("civic-compass-profile")));
+  }, []);
 
   return (
     <main className="results-shell">
@@ -757,11 +808,13 @@ function Results({
           <div className="save-icon"><LockKeyhole /></div>
           <div>
             <span className="card-kicker">Your choice</span>
-            <h2>{saved ? "Saved in this browser" : "Keep this snapshot?"}</h2>
+            <h2>{saved ? "Encrypted on this device" : savePrompt ? "Protect your saved profile" : "Keep this snapshot?"}</h2>
             <p>
               {saved
-                ? "This profile is stored only on this device. You can remove it at any time."
-                : "Saving is optional. Nothing leaves this browser and no account is required."}
+                ? "Your answers are encrypted with AES-256-GCM and stored only in this browser."
+                : savePrompt
+                  ? "Choose a passphrase of at least 8 characters. We never store it and cannot recover it."
+                  : "Saving is optional. Nothing leaves this browser and no account is required."}
             </p>
           </div>
           {saved ? (
@@ -770,17 +823,72 @@ function Results({
               onClick={() => {
                 localStorage.removeItem("civic-compass-profile");
                 setSaved(false);
+                setSavePrompt(false);
               }}
             >
               Delete saved result
             </button>
+          ) : savePrompt ? (
+            <div className="save-form">
+              <label>
+                <span>Encryption passphrase</span>
+                <input
+                  type="password"
+                  value={passphrase}
+                  minLength={8}
+                  autoComplete="new-password"
+                  onChange={(event) => {
+                    setPassphrase(event.target.value);
+                    setSaveError("");
+                  }}
+                  placeholder="At least 8 characters"
+                />
+              </label>
+              {saveError && <small role="alert">{saveError}</small>}
+              <div>
+                <button
+                  className="button ghost"
+                  onClick={() => {
+                    setSavePrompt(false);
+                    setPassphrase("");
+                    setSaveError("");
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="button primary"
+                  disabled={saving}
+                  onClick={async () => {
+                    if (passphrase.length < 8) {
+                      setSaveError("Use at least 8 characters.");
+                      return;
+                    }
+                    setSaving(true);
+                    try {
+                      const encrypted = await encryptProfile(
+                        { answers, importance, savedAt: new Date().toISOString() },
+                        passphrase,
+                      );
+                      localStorage.setItem("civic-compass-profile", JSON.stringify(encrypted));
+                      setPassphrase("");
+                      setSavePrompt(false);
+                      setSaved(true);
+                    } catch {
+                      setSaveError("This browser could not encrypt the profile.");
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                >
+                  {saving ? "Encrypting…" : "Encrypt & save"}
+                </button>
+              </div>
+            </div>
           ) : (
             <button
               className="button primary"
-              onClick={() => {
-                localStorage.setItem("civic-compass-profile", JSON.stringify({ answers, importance, savedAt: new Date().toISOString() }));
-                setSaved(true);
-              }}
+              onClick={() => setSavePrompt(true)}
             >
               Save on this device
             </button>
