@@ -1,0 +1,243 @@
+export type DimensionKey =
+  | "economic"
+  | "social"
+  | "liberty"
+  | "global"
+  | "justice"
+  | "markets"
+  | "identity"
+  | "change"
+  | "trust"
+  | "faith";
+
+export type CategoryKey =
+  | "economy"
+  | "immigration"
+  | "justice"
+  | "family"
+  | "equal"
+  | "rights"
+  | "institutions";
+
+export type Weight = { dimension: DimensionKey; weight: number };
+
+export type Question = {
+  id: number;
+  category: CategoryKey;
+  statement: string;
+  context: string;
+  weights: Weight[];
+  value: string;
+};
+
+export const DIMENSIONS: Record<
+  DimensionKey,
+  { name: string; low: string; high: string; explanation: string }
+> = {
+  economic: {
+    name: "Economic approach",
+    low: "Public investment",
+    high: "Economic freedom",
+    explanation: "How you balance shared public provision with private choice and lower taxation.",
+  },
+  social: {
+    name: "Social outlook",
+    low: "Progressive",
+    high: "Traditional",
+    explanation: "How you weigh social reform, inherited norms, family structures, and cultural continuity.",
+  },
+  liberty: {
+    name: "Liberty & authority",
+    low: "Individual liberty",
+    high: "Government authority",
+    explanation: "When personal choice conflicts with public order, safety, or collective rules.",
+  },
+  global: {
+    name: "Global orientation",
+    low: "Global cooperation",
+    high: "National sovereignty",
+    explanation: "How much decisions should prioritize international cooperation or national independence.",
+  },
+  justice: {
+    name: "Criminal justice",
+    low: "Rehabilitation",
+    high: "Law & order",
+    explanation: "How you balance prevention and second chances with enforcement, punishment, and public safety.",
+  },
+  markets: {
+    name: "Economic systems",
+    low: "Public direction",
+    high: "Market capitalism",
+    explanation: "Whether essential outcomes are best delivered through markets, public ownership, or a mix.",
+  },
+  identity: {
+    name: "Equal treatment",
+    low: "Identity-conscious",
+    high: "Individual treatment",
+    explanation: "Whether policy should account for group disparities or apply the same rules to each person.",
+  },
+  change: {
+    name: "Pace of change",
+    low: "Rapid reform",
+    high: "Gradual change",
+    explanation: "How quickly institutions should respond to social problems and emerging norms.",
+  },
+  trust: {
+    name: "Institutional confidence",
+    low: "Skeptical",
+    high: "Trusting",
+    explanation: "How much confidence you place in public institutions, experts, and established processes.",
+  },
+  faith: {
+    name: "Public values",
+    low: "Secular policy",
+    high: "Faith-informed",
+    explanation: "How religion and moral traditions should relate to public decisions in a pluralistic society.",
+  },
+};
+
+export const CATEGORIES: Record<
+  CategoryKey,
+  {
+    name: string;
+    short: string;
+    description: string;
+    history: string;
+    viewpoints: string;
+    debate: string;
+    reading: string[];
+  }
+> = {
+  economy: {
+    name: "Economy & public services",
+    short: "Economy",
+    description: "How markets, government, employers, and workers should share responsibility for prosperity and security.",
+    history: "Modern debates draw from industrialization, the New Deal, postwar growth, deregulation, and expanding social insurance.",
+    viewpoints: "Views range from free-market approaches to social democracy, with many mixed-economy positions between them.",
+    debate: "Key questions include taxation, public ownership, worker power, competition, and which services should be guaranteed.",
+    reading: ["Congressional Budget Office: The Budget and Economic Outlook", "Federal Reserve: Purposes and Functions"],
+  },
+  immigration: {
+    name: "Immigration & borders",
+    short: "Immigration",
+    description: "How a country balances lawful entry, border security, economic needs, family unity, and humanitarian protection.",
+    history: "U.S. immigration policy has repeatedly shifted through quotas, exclusion laws, refugee programs, and the 1965 immigration reforms.",
+    viewpoints: "Competing views emphasize sovereignty and enforcement, humanitarian duties, economic gains, or pressure on local services.",
+    debate: "Current debates cover asylum, legal immigration capacity, enforcement, citizenship, employer accountability, and legalization.",
+    reading: ["Congressional Research Service: U.S. Immigration Policy", "Migration Policy Institute: Immigration Data Hub"],
+  },
+  justice: {
+    name: "Crime & criminal justice",
+    short: "Justice",
+    description: "How society protects the public, holds people accountable, prevents crime, and supports rehabilitation.",
+    history: "Policy has moved between rehabilitation, tougher sentencing, community policing, and reforms to bail and incarceration.",
+    viewpoints: "Some prioritize consistent enforcement and victims; others stress prevention, oversight, treatment, and disparate impacts.",
+    debate: "Central questions include police resources, accountability, sentencing, bail, youth justice, and reentry.",
+    reading: ["Bureau of Justice Statistics: Criminal Justice Data", "National Institute of Justice: Crime and Justice Research"],
+  },
+  family: {
+    name: "Family, education & community",
+    short: "Family",
+    description: "The roles of parents, schools, religious communities, and government in supporting children and families.",
+    history: "Debates have evolved alongside public schooling, changing household structures, women’s employment, and civil-rights law.",
+    viewpoints: "Positions differ on parental authority, plural family forms, public support, tradition, and school discretion.",
+    debate: "Key debates include childcare, parental notice, sensitive curricula, marriage policy, and religious liberty.",
+    reading: ["Child Trends: Family and Child Well-being", "National Center for Education Statistics"],
+  },
+  equal: {
+    name: "Equal opportunity & inclusion",
+    short: "Equality",
+    description: "How institutions should pursue nondiscrimination, representation, individual merit, and fair opportunity.",
+    history: "The debate reflects Reconstruction, civil-rights law, affirmative action, disability rights, and modern DEI programs.",
+    viewpoints: "Some favor identity-conscious remedies; others emphasize neutral rules, individual treatment, and socioeconomic approaches.",
+    debate: "Disputes center on preferences, measurement of disparities, anti-discrimination enforcement, and definitions of merit.",
+    reading: ["U.S. Equal Employment Opportunity Commission", "Pew Research Center: Race and Ethnicity"],
+  },
+  rights: {
+    name: "Rights, sex & gender policy",
+    short: "Rights",
+    description: "How policy can account for identity, biological sex, privacy, safety, fairness, and equal civic treatment.",
+    history: "Current policy sits at the intersection of sex-discrimination law, privacy doctrine, athletics rules, and evolving gender norms.",
+    viewpoints: "Approaches prioritize gender identity, sex-based protections, individualized accommodations, or combinations of these.",
+    debate: "Questions include facilities, sport eligibility, healthcare, parental roles, shelters, prisons, and private alternatives.",
+    reading: ["Congressional Research Service: Equal Protection", "U.S. Department of Justice: Civil Rights"],
+  },
+  institutions: {
+    name: "Democracy, liberty & institutions",
+    short: "Institutions",
+    description: "The rules and norms that support democracy, civil liberty, public trust, and peaceful disagreement.",
+    history: "Liberal democracy developed through constitutional limits, expanding suffrage, civil liberties, and professional institutions.",
+    viewpoints: "Some emphasize reform and expert capacity; others stress decentralization, skepticism, tradition, and checks on elite power.",
+    debate: "Current questions involve speech, institutional legitimacy, majority rule, minority rights, and the pace of reform.",
+    reading: ["National Archives: Founding Documents", "Library of Congress: Constitution Annotated"],
+  },
+};
+
+const q = (
+  id: number,
+  category: CategoryKey,
+  statement: string,
+  context: string,
+  value: string,
+  weights: Weight[],
+): Question => ({ id, category, statement, context, value, weights });
+
+export const QUESTIONS: Question[] = [
+  q(1, "institutions", "Free speech should protect political opinions that many people find offensive.", "Consider legal protection, not whether the speech deserves approval.", "Individual liberty", [{ dimension: "liberty", weight: -1 }, { dimension: "trust", weight: -0.25 }]),
+  q(2, "economy", "Government should guarantee access to essential healthcare, even when doing so requires higher taxes.", "Focus on access to essential care rather than one specific healthcare system.", "Compassion", [{ dimension: "economic", weight: -1 }, { dimension: "markets", weight: -0.65 }]),
+  q(3, "immigration", "The government should strengthen enforcement at the national border.", "Assume enforcement remains consistent with constitutional and humanitarian law.", "National sovereignty", [{ dimension: "global", weight: 1 }, { dimension: "liberty", weight: 0.35 }]),
+  q(4, "justice", "Nonviolent offenders should have greater access to treatment and rehabilitation instead of incarceration.", "Consider people who do not present a serious public-safety risk.", "Second chances", [{ dimension: "justice", weight: -1 }, { dimension: "social", weight: -0.15 }]),
+  q(5, "equal", "Hiring and promotion decisions should primarily be based on individual qualifications and job performance.", "This does not imply that discrimination protections should be weakened.", "Merit", [{ dimension: "identity", weight: 1 }, { dimension: "markets", weight: 0.2 }]),
+  q(6, "family", "Parents should have primary authority over the upbringing and education of their children.", "Think about the usual case while recognizing existing child-safety protections.", "Parental responsibility", [{ dimension: "social", weight: 0.75 }, { dimension: "liberty", weight: -0.45 }, { dimension: "faith", weight: 0.2 }]),
+  q(7, "rights", "Schools should offer private or single-user facilities when students have conflicting privacy needs.", "Consider this as an accommodation available to any student.", "Practical compromise", [{ dimension: "change", weight: 0.25 }, { dimension: "identity", weight: 0.1 }]),
+  q(8, "economy", "Private ownership and market competition generally create more prosperity than government economic planning.", "Compare overall systems rather than claiming markets never fail.", "Economic opportunity", [{ dimension: "markets", weight: 1 }, { dimension: "economic", weight: 0.7 }]),
+  q(9, "institutions", "Government should take an active role in reducing social and economic inequality.", "Consider taxes, services, and regulation together.", "Equality", [{ dimension: "economic", weight: -0.9 }, { dimension: "identity", weight: -0.25 }]),
+  q(10, "immigration", "People who entered the country unlawfully but have lived peacefully and worked for many years should have a pathway to legal status.", "A pathway may include background checks, fees, and other requirements.", "Compassion", [{ dimension: "global", weight: -0.7 }, { dimension: "change", weight: -0.2 }]),
+  q(11, "justice", "Police departments should receive the resources needed to respond effectively to violent crime.", "Resources can include staffing, training, technology, and prevention partnerships.", "Public safety", [{ dimension: "justice", weight: 0.85 }, { dimension: "trust", weight: 0.3 }]),
+  q(12, "equal", "Race or sex should sometimes be considered to correct the effects of historical discrimination.", "Think about limited consideration among otherwise qualified candidates.", "Remedial fairness", [{ dimension: "identity", weight: -1 }, { dimension: "change", weight: -0.25 }]),
+  q(13, "family", "Families can take many forms and should receive equal legal protection.", "Consider civil law and access to public benefits.", "Equal dignity", [{ dimension: "social", weight: -0.8 }, { dimension: "faith", weight: -0.2 }]),
+  q(14, "rights", "Fairness and safety in women’s sports may require eligibility rules based on biological sex.", "Rules can vary by age, sport, and level of competition.", "Fairness", [{ dimension: "social", weight: 0.65 }, { dimension: "identity", weight: 0.45 }, { dimension: "change", weight: 0.3 }]),
+  q(15, "institutions", "Liberal democracy—free elections, civil liberties, and the rule of law—is the best foundation for government.", "The term refers to a constitutional system, not a political party.", "Democratic norms", [{ dimension: "trust", weight: 0.9 }, { dimension: "liberty", weight: -0.3 }]),
+  q(16, "economy", "Workers should have more influence over major decisions in the companies where they work.", "Influence could occur through unions, boards, ownership, or other structures.", "Worker voice", [{ dimension: "markets", weight: -0.6 }, { dimension: "economic", weight: -0.45 }]),
+  q(17, "immigration", "The legal immigration process should be expanded and made more efficient.", "Consider both the number of legal pathways and how well the system operates.", "Opportunity", [{ dimension: "global", weight: -0.8 }, { dimension: "markets", weight: 0.15 }]),
+  q(18, "justice", "Police departments require stronger independent oversight and accountability systems.", "Oversight can include civilian review, transparent reporting, and external investigation.", "Accountability", [{ dimension: "justice", weight: -0.65 }, { dimension: "trust", weight: -0.45 }]),
+  q(19, "equal", "Unequal outcomes among demographic groups do not necessarily prove that discrimination occurred.", "Other explanations may still warrant investigation.", "Evidence", [{ dimension: "identity", weight: 0.8 }, { dimension: "trust", weight: -0.15 }]),
+  q(20, "family", "Government should provide greater financial support for childcare and working families.", "Support may include tax credits, paid leave, or subsidized care.", "Family stability", [{ dimension: "economic", weight: -0.7 }, { dimension: "social", weight: -0.15 }]),
+  q(21, "rights", "People should generally be able to use public facilities that correspond with their gender identity.", "Consider ordinary public facilities; specialized settings may raise separate questions.", "Equal access", [{ dimension: "social", weight: -0.8 }, { dimension: "identity", weight: -0.55 }, { dimension: "change", weight: -0.35 }]),
+  q(22, "institutions", "Rapid social change can create instability even when its goals are well intentioned.", "Consider both the aims of reform and the effects of implementation.", "Social stability", [{ dimension: "change", weight: 1 }, { dimension: "social", weight: 0.3 }]),
+  q(23, "economy", "Concentrated corporate power can threaten freedom in ways similar to concentrated government power.", "Think about monopolies, market access, speech, and working conditions.", "Distributed power", [{ dimension: "markets", weight: -0.45 }, { dimension: "trust", weight: -0.35 }]),
+  q(24, "immigration", "Asylum applicants should receive a fair hearing before removal.", "This statement does not assume that every claim should be approved.", "Due process", [{ dimension: "global", weight: -0.45 }, { dimension: "liberty", weight: -0.35 }]),
+  q(25, "justice", "Repeat violent offenders should generally receive longer sentences.", "Focus on serious violent offenses and proven repeat conduct.", "Accountability", [{ dimension: "justice", weight: 1 }, { dimension: "liberty", weight: 0.35 }]),
+  q(26, "equal", "DEI programs can become unfair when they prioritize demographic identity over individual merit.", "Consider program design rather than the motives of participants.", "Individual fairness", [{ dimension: "identity", weight: 0.9 }, { dimension: "trust", weight: -0.3 }]),
+  q(27, "family", "Religious and traditional families should be free to live by their values while respecting the legal rights of others.", "Consider pluralism: protection for belief alongside equal civil rights.", "Religious liberty", [{ dimension: "faith", weight: 0.8 }, { dimension: "liberty", weight: -0.6 }]),
+  q(28, "rights", "Sex-specific shelters and prisons should be permitted to consider biological sex in placement decisions.", "Other factors may include safety, risk, identity, and individualized review.", "Safety", [{ dimension: "social", weight: 0.55 }, { dimension: "identity", weight: 0.4 }, { dimension: "liberty", weight: 0.15 }]),
+  q(29, "institutions", "Society should continue reforming traditions that result in unfair treatment.", "Consider evidence of harm as well as the value of continuity.", "Social progress", [{ dimension: "change", weight: -0.9 }, { dimension: "social", weight: -0.45 }]),
+  q(30, "economy", "A mixed economy combining private enterprise with public programs is preferable to either unrestricted capitalism or complete government control.", "Think about the overall framework rather than any one program.", "Pragmatism", [{ dimension: "markets", weight: -0.15 }, { dimension: "economic", weight: -0.2 }]),
+  q(31, "immigration", "Employers should face stronger consequences for knowingly hiring unauthorized workers.", "Assume employers have a reliable way to verify work authorization.", "Rule of law", [{ dimension: "global", weight: 0.5 }, { dimension: "justice", weight: 0.3 }]),
+  q(32, "justice", "Poverty and lack of opportunity are major contributors to crime.", "This does not remove individual responsibility for criminal acts.", "Prevention", [{ dimension: "justice", weight: -0.7 }, { dimension: "economic", weight: -0.25 }]),
+  q(33, "equal", "Organizations should actively examine whether their rules create avoidable barriers for people from different backgrounds.", "Focus on reviewing rules and access, not guaranteeing equal outcomes.", "Inclusion", [{ dimension: "identity", weight: -0.6 }, { dimension: "trust", weight: 0.2 }]),
+  q(34, "family", "Schools should be able to introduce some sensitive topics without parental approval when educators judge them age appropriate.", "Consider established curriculum review and opt-out processes.", "Professional judgment", [{ dimension: "social", weight: -0.55 }, { dimension: "trust", weight: 0.65 }]),
+  q(35, "rights", "Policies in sex-specific spaces should be decided individually based on safety, privacy, and the circumstances involved.", "Consider case-by-case review instead of one universal rule.", "Context", [{ dimension: "identity", weight: -0.15 }, { dimension: "trust", weight: 0.25 }]),
+  q(36, "institutions", "Public institutions have become disconnected from many working-class and traditional communities.", "Consider government, higher education, media, and large civic organizations.", "Representation", [{ dimension: "trust", weight: -0.85 }, { dimension: "change", weight: 0.2 }]),
+  q(37, "economy", "History shows that highly centralized economic systems can threaten political freedom.", "Distinguish centralized state control from limited public programs in a market democracy.", "Limited government", [{ dimension: "markets", weight: 0.85 }, { dimension: "liberty", weight: -0.3 }]),
+  q(38, "immigration", "High levels of immigration can place excessive pressure on housing, schools, healthcare, and public services.", "Effects can vary by region, time period, and government capacity.", "Community capacity", [{ dimension: "global", weight: 0.75 }, { dimension: "economic", weight: 0.15 }]),
+  q(39, "justice", "Juvenile offenders should generally be treated differently from adult offenders.", "Differences can include sentencing, privacy, education, and rehabilitation.", "Youth development", [{ dimension: "justice", weight: -0.75 }, { dimension: "change", weight: -0.1 }]),
+  q(40, "family", "Communities and religious institutions should play a larger role in supporting families.", "This can complement rather than replace government or private support.", "Community responsibility", [{ dimension: "faith", weight: 0.65 }, { dimension: "economic", weight: 0.15 }]),
+];
+
+export const ANSWERS = [
+  { label: "Strongly agree", short: "Strongly agree", value: 3 },
+  { label: "Agree", short: "Agree", value: 2 },
+  { label: "Slightly agree", short: "Slightly agree", value: 1 },
+  { label: "Neutral or unsure", short: "Neutral", value: 0 },
+  { label: "Slightly disagree", short: "Slightly disagree", value: -1 },
+  { label: "Disagree", short: "Disagree", value: -2 },
+  { label: "Strongly disagree", short: "Strongly disagree", value: -3 },
+] as const;
+
+export const IMPORTANCE = [
+  { label: "Not important", value: 0.75 },
+  { label: "Somewhat important", value: 1 },
+  { label: "Important", value: 1.2 },
+  { label: "Very important", value: 1.4 },
+] as const;
