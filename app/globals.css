@@ -3483,3 +3483,67 @@ body {
   background: #eef2d5;
   color: #455019;
 }
+
+/* Contrast hardening */
+.interpretation {
+  background: #ffffff;
+  color: #10212b;
+  border: 1px solid #d8e6e8;
+  box-shadow: 0 12px 32px rgba(16, 33, 43, 0.07);
+}
+
+.interpretation .card-kicker {
+  color: #007f8f;
+}
+
+.interpretation h2 {
+  color: #10212b;
+}
+
+.interpretation p {
+  color: #314653;
+}
+
+.intro-strip p,
+.results-hero h1,
+.results-hero > p,
+.results-hero > p strong,
+.result-caveat,
+.admin-sidebar,
+.admin-sidebar nav button,
+.admin-sidebar nav > span,
+.admin-brand,
+.admin-brand small,
+.admin-user,
+.admin-user small,
+.admin-user > svg {
+  color: #ffffff;
+}
+
+.eyebrow.light,
+.results-hero .eyebrow.light {
+  color: #fff7b8;
+}
+
+.admin-sidebar nav button.active {
+  color: #004f5d;
+}
+
+.chart-caption,
+.score-detail > small,
+.axis-ends small,
+.map-label,
+.radar-chart text,
+.admin-metrics article p,
+.panel-header span,
+.table-title > div > span,
+.admin-table-panel th,
+.table-footer,
+.feedback-panel > p,
+.feedback-bars > div,
+.release-state small,
+.attention-row small,
+.polar b,
+.row-more svg {
+  color: #314653;
+}
