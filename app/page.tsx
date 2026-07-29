@@ -39,6 +39,7 @@ import {
 type AnswerMap = Record<number, number | null>;
 type ImportanceMap = Record<number, number>;
 type Screen = "home" | "quiz" | "results";
+type QuizMode = "quick" | "full";
 type ResultTab = "overview" | "issues" | "scoring";
 type PartyAlignment = {
   title: string;
@@ -48,6 +49,17 @@ type PartyAlignment = {
 
 const DIMENSION_ORDER = Object.keys(DIMENSIONS) as DimensionKey[];
 const CATEGORY_ORDER = Object.keys(CATEGORIES) as CategoryKey[];
+const QUICK_QUESTION_COUNT = 16;
+const QUICK_QUESTION_IDS = [1, 2, 3, 5, 11, 12, 14, 15, 20, 24, 32, 41, 43, 49, 56, 59];
+
+function shuffleQuestions(source: typeof QUESTIONS) {
+  const shuffled = [...source];
+  crypto.getRandomValues(new Uint32Array(shuffled.length)).forEach((value, index) => {
+    const swapIndex = index + (value % (shuffled.length - index));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  });
+  return shuffled;
+}
 
 function Brand() {
   return (
@@ -109,10 +121,12 @@ function Footer() {
 }
 
 function Home({
-  onStart,
+  onQuickStart,
+  onFullStart,
   onSample,
 }: {
-  onStart: () => void;
+  onQuickStart: () => void;
+  onFullStart: () => void;
   onSample: () => void;
 }) {
   return (
@@ -129,21 +143,21 @@ function Home({
             <em>left</em> or <em>right.</em>
           </h1>
           <p className="hero-copy">
-            Discover how your values, priorities, and policy views fit together—with nuance, context, and
-            no party labels.
+            Start with a quick preview, then take the full assessment when you want a more complete profile.
           </p>
           <div className="hero-actions">
-            <button className="button primary" onClick={onStart}>
-              Begin the assessment <ArrowRight size={18} />
+            <button className="button primary" onClick={onQuickStart}>
+              Take the quick quiz <ArrowRight size={18} />
             </button>
-            <button className="button secondary" onClick={onSample}>
-              Explore a sample profile
+            <button className="button secondary" onClick={onFullStart}>
+              Full assessment
             </button>
+            <button className="button ghost" onClick={onSample}>Sample profile</button>
           </div>
           <div className="hero-meta">
-            <span><span>62</span> balanced questions</span>
+            <span><span>{QUICK_QUESTION_COUNT}</span> question preview</span>
             <i />
-            <span><span>9-11</span> minutes</span>
+            <span><span>62</span> question full profile</span>
             <i />
             <span><LockKeyhole size={15} /> No account needed</span>
           </div>
@@ -246,10 +260,10 @@ function Home({
         <section className="final-cta">
           <span className="section-kicker">Find your bearings</span>
           <h2>Understand your views.<br />In your own terms.</h2>
-          <button className="button primary light" onClick={onStart}>
-            Begin the assessment <ArrowRight size={18} />
+          <button className="button primary light" onClick={onQuickStart}>
+            Take the quick quiz <ArrowRight size={18} />
           </button>
-          <p>Free · Anonymous · About 10 minutes</p>
+          <p>Free · Anonymous · Preview first, full profile when ready</p>
         </section>
       </main>
       <Footer />
@@ -258,6 +272,8 @@ function Home({
 }
 
 function Quiz({
+  mode,
+  questions,
   answers,
   importance,
   setAnswers,
@@ -265,6 +281,8 @@ function Quiz({
   onComplete,
   onExit,
 }: {
+  mode: QuizMode;
+  questions: typeof QUESTIONS;
   answers: AnswerMap;
   importance: ImportanceMap;
   setAnswers: React.Dispatch<React.SetStateAction<AnswerMap>>;
@@ -273,13 +291,14 @@ function Quiz({
   onExit: () => void;
 }) {
   const [index, setIndex] = useState(0);
-  const question = QUESTIONS[index];
+  const question = questions[index];
   const answer = answers[question.id];
   const important = importance[question.id] ?? 1;
   const answered = Object.keys(answers).length;
+  const total = questions.length;
 
   const next = () => {
-    if (index === QUESTIONS.length - 1) onComplete();
+    if (index === total - 1) onComplete();
     else {
       setIndex(index + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -295,10 +314,10 @@ function Quiz({
     <main className="quiz-shell">
       <div className="quiz-topline">
         <button className="text-button" onClick={onExit}><ArrowLeft size={16} /> Save & exit</button>
-        <span>{answered} of {QUESTIONS.length} answered</span>
+        <span>{mode === "quick" ? "Quick preview" : "Full assessment"} · {answered} of {total} answered</span>
       </div>
-      <div className="quiz-progress" aria-label={`Question ${index + 1} of ${QUESTIONS.length}`}>
-        <span style={{ width: `${((index + 1) / QUESTIONS.length) * 100}%` }} />
+      <div className="quiz-progress" aria-label={`Question ${index + 1} of ${total}`}>
+        <span style={{ width: `${((index + 1) / total) * 100}%` }} />
       </div>
       <div className="quiz-layout">
         <aside className="quiz-aside">
@@ -307,7 +326,8 @@ function Quiz({
           <p>{CATEGORIES[question.category].description}</p>
           <div className="topic-list">
             {CATEGORY_ORDER.map((key, i) => {
-              const complete = QUESTIONS.filter((item) => item.category === key).every((item) => item.id in answers);
+              const categoryQuestions = questions.filter((item) => item.category === key);
+              const complete = categoryQuestions.length > 0 && categoryQuestions.every((item) => item.id in answers);
               return (
                 <span key={key} className={key === question.category ? "active" : complete ? "done" : ""}>
                   <i>{complete ? <Check size={12} /> : i + 1}</i>
@@ -367,7 +387,7 @@ function Quiz({
                 <ArrowLeft size={18} />
               </button>
               <button className="button primary" disabled={answer === undefined} onClick={next}>
-                {index === QUESTIONS.length - 1 ? "See my profile" : "Continue"} <ArrowRight size={18} />
+                {index === total - 1 ? (mode === "quick" ? "Reveal preview" : "See my profile") : "Continue"} <ArrowRight size={18} />
               </button>
             </div>
           </div>
@@ -591,13 +611,17 @@ function CompassMap({ scores }: { scores: Record<DimensionKey, number> }) {
 }
 
 function Results({
+  mode,
   answers,
   importance,
   onRetake,
+  onFullAssessment,
 }: {
+  mode: QuizMode;
   answers: AnswerMap;
   importance: ImportanceMap;
   onRetake: () => void;
+  onFullAssessment: () => void;
 }) {
   const [tab, setTab] = useState<ResultTab>("overview");
   const [expandedDimension, setExpandedDimension] = useState<DimensionKey | null>("economic");
@@ -640,6 +664,7 @@ function Results({
 
   const leaningEconomic = scores.economic > 12 ? "economically market-oriented" : scores.economic < -12 ? "supportive of public investment" : "economically balanced";
   const leaningSocial = scores.social > 12 ? "cautious about rapid social change" : scores.social < -12 ? "open to social reform" : "moderate on social questions";
+  const isPreview = mode === "quick";
 
   useEffect(() => {
     setSaved(Boolean(localStorage.getItem("civic-compass-profile")));
@@ -648,16 +673,23 @@ function Results({
   return (
     <main className="results-shell">
       <section className="results-hero">
-        <div className="eyebrow light"><Sparkles size={14} /> Your civic profile</div>
-        <h1>Pragmatic pluralist</h1>
+        <div className="eyebrow light"><Sparkles size={14} /> {isPreview ? "Quick preview" : "Your civic profile"}</div>
+        <h1>{isPreview ? "Preview profile" : "Pragmatic pluralist"}</h1>
         <p>
           You tend to be <strong>{leaningEconomic}</strong> while remaining <strong>{leaningSocial}</strong>.
           Your answers favor practical tradeoffs over a single ideological position.
         </p>
         <div className="result-caveat">
           <Info size={17} />
-          This is an estimate based only on your responses—not a label, diagnosis, or endorsement.
+          {isPreview
+            ? "This preview uses fewer questions. Take the full assessment for stronger confidence and a fuller issue breakdown."
+            : "This is an estimate based only on your responses—not a label, diagnosis, or endorsement."}
         </div>
+        {isPreview && (
+          <button className="button primary light preview-upgrade" onClick={onFullAssessment}>
+            Take the full assessment <ArrowRight size={18} />
+          </button>
+        )}
       </section>
 
       <div className="results-nav">
@@ -786,7 +818,7 @@ function Results({
             </p>
             <p>
               Results can change as your experiences and priorities change. Political labels also mean different
-              things in different places, so this summary is best used as a starting point for reflection.
+              things in different places, so this {isPreview ? "preview" : "summary"} is best used as a starting point for reflection.
             </p>
           </section>
 
@@ -1020,8 +1052,15 @@ function Results({
       </section>
 
       <section className="results-actions">
-        <div><h2>Your profile is a snapshot, not a verdict.</h2><p>Views evolve. Retake anytime to see what changed.</p></div>
-        <button className="button secondary" onClick={onRetake}><RotateCcw size={16} /> Retake assessment</button>
+        <div>
+          <h2>{isPreview ? "Ready for the full profile?" : "Your profile is a snapshot, not a verdict."}</h2>
+          <p>{isPreview ? "The full version improves confidence and shows a broader issue breakdown." : "Views evolve. Retake anytime to see what changed."}</p>
+        </div>
+        {isPreview ? (
+          <button className="button primary" onClick={onFullAssessment}>Take full assessment <ArrowRight size={16} /></button>
+        ) : (
+          <button className="button secondary" onClick={onRetake}><RotateCcw size={16} /> Retake assessment</button>
+        )}
       </section>
     </main>
   );
@@ -1029,10 +1068,17 @@ function Results({
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("home");
+  const [quizMode, setQuizMode] = useState<QuizMode>("quick");
+  const [questionOrder, setQuestionOrder] = useState<typeof QUESTIONS>([]);
   const [answers, setAnswers] = useState<AnswerMap>({});
   const [importance, setImportance] = useState<ImportanceMap>({});
 
-  const start = () => {
+  const start = (mode: QuizMode = "full") => {
+    const pool = mode === "quick"
+      ? QUESTIONS.filter((question) => QUICK_QUESTION_IDS.includes(question.id))
+      : QUESTIONS;
+    setQuizMode(mode);
+    setQuestionOrder(shuffleQuestions(pool));
     setAnswers({});
     setImportance({});
     setScreen("quiz");
@@ -1048,6 +1094,7 @@ export default function App() {
     );
     setAnswers(sampleAnswers);
     setImportance(sampleImportance);
+    setQuizMode("full");
     setScreen("results");
     window.scrollTo(0, 0);
   };
@@ -1056,6 +1103,8 @@ export default function App() {
     const preview = new URLSearchParams(window.location.search).get("preview");
     if (preview === "results") sample();
     if (preview === "quiz") {
+      setQuizMode("quick");
+      setQuestionOrder(shuffleQuestions(QUESTIONS.filter((question) => QUICK_QUESTION_IDS.includes(question.id))));
       setScreen("quiz");
       window.scrollTo(0, 0);
     }
@@ -1071,9 +1120,11 @@ export default function App() {
   return (
     <>
       <Header screen={screen} onHome={home} />
-      {screen === "home" && <Home onStart={start} onSample={sample} />}
+      {screen === "home" && <Home onQuickStart={() => start("quick")} onFullStart={() => start("full")} onSample={sample} />}
       {screen === "quiz" && (
         <Quiz
+          mode={quizMode}
+          questions={questionOrder.length ? questionOrder : shuffleQuestions(QUESTIONS.filter((question) => QUICK_QUESTION_IDS.includes(question.id)))}
           answers={answers}
           importance={importance}
           setAnswers={setAnswers}
@@ -1082,7 +1133,15 @@ export default function App() {
           onExit={home}
         />
       )}
-      {screen === "results" && <Results answers={answers} importance={importance} onRetake={start} />}
+      {screen === "results" && (
+        <Results
+          mode={quizMode}
+          answers={answers}
+          importance={importance}
+          onRetake={() => start(quizMode)}
+          onFullAssessment={() => start("full")}
+        />
+      )}
     </>
   );
 }

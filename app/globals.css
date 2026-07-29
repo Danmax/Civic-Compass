@@ -1070,6 +1070,10 @@ fieldset {
   font-size: 10px;
 }
 
+.preview-upgrade {
+  margin-top: 22px;
+}
+
 .results-nav {
   position: sticky;
   z-index: 10;
