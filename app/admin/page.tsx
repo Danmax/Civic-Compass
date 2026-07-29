@@ -101,7 +101,7 @@ export default function AdminPage() {
             </div>
             <div className="release-state">
               <CheckCircle2 />
-              <div><strong>Version 2026.2 is live</strong><small>Published July 18 · 40 questions</small></div>
+              <div><strong>Version 2026.2 is live</strong><small>Published July 18 · 62 questions</small></div>
               <button>View release</button>
             </div>
           </section>

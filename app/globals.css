@@ -1476,6 +1476,44 @@ fieldset {
   gap: 16px;
 }
 
+.party-reveal {
+  margin-top: 22px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 22px;
+}
+
+.party-reveal p {
+  max-width: 720px;
+  margin: 8px 0 0;
+  color: #66736b;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.party-result {
+  max-width: 560px;
+  padding: 16px;
+  background: #f2f4f0;
+  border: 1px solid #e2e5df;
+  border-radius: 8px;
+}
+
+.party-result strong {
+  display: block;
+  color: var(--forest);
+  font-size: 15px;
+}
+
+.party-result small {
+  display: block;
+  margin: 8px 0 12px;
+  color: #7d8881;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
 .core-values > p {
   margin: 7px 0 24px;
   color: #7c8780;
@@ -2001,7 +2039,7 @@ fieldset {
   .quiz-shell { background: var(--cream); }
   .quiz-layout { grid-template-columns: 1fr; gap: 25px; padding-top: 28px; }
   .quiz-aside { display: none; }
-  .result-summary-grid, .values-grid { grid-template-columns: 1fr; }
+  .result-summary-grid, .values-grid, .party-reveal { grid-template-columns: 1fr; }
   .result-followup { grid-template-columns: 1fr; }
 }
 

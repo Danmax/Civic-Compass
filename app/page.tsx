@@ -40,6 +40,11 @@ type AnswerMap = Record<number, number | null>;
 type ImportanceMap = Record<number, number>;
 type Screen = "home" | "quiz" | "results";
 type ResultTab = "overview" | "issues" | "scoring";
+type PartyAlignment = {
+  title: string;
+  summary: string;
+  caveat: string;
+};
 
 const DIMENSION_ORDER = Object.keys(DIMENSIONS) as DimensionKey[];
 const CATEGORY_ORDER = Object.keys(CATEGORIES) as CategoryKey[];
@@ -136,9 +141,9 @@ function Home({
             </button>
           </div>
           <div className="hero-meta">
-            <span><span>40</span> balanced questions</span>
+            <span><span>62</span> balanced questions</span>
             <i />
-            <span><span>6–7</span> minutes</span>
+            <span><span>9-11</span> minutes</span>
             <i />
             <span><LockKeyhole size={15} /> No account needed</span>
           </div>
@@ -244,7 +249,7 @@ function Home({
           <button className="button primary light" onClick={onStart}>
             Begin the assessment <ArrowRight size={18} />
           </button>
-          <p>Free · Anonymous · About 7 minutes</p>
+          <p>Free · Anonymous · About 10 minutes</p>
         </section>
       </main>
       <Footer />
@@ -453,6 +458,84 @@ function dimensionPosition(key: DimensionKey, score: number) {
   return `${strengthLabel(score)} ${score < 0 ? dim.low.toLowerCase() : dim.high.toLowerCase()}`;
 }
 
+function partyAlignment(scores: Record<DimensionKey, number>): PartyAlignment {
+  const economicLeft = scores.economic < -10 || scores.markets < -10;
+  const economicRight = scores.economic > 10 || scores.markets > 10;
+  const socialLeft = scores.social < -10 || scores.identity < -10;
+  const socialRight = scores.social > 10 || scores.faith > 10;
+  const libertyOrInstitutionSkeptic = scores.liberty < -8 || scores.trust < -14;
+  const globalCooperation = scores.global < -10;
+  const nationalSovereignty = scores.global > 10;
+
+  if (economicRight && socialRight) {
+    return {
+      title: "Closer to Republican or conservative-aligned voters",
+      summary:
+        "Your responses currently align more with center-right or conservative party coalitions, especially on markets, tradition, national sovereignty, public safety, or skepticism of centralized government.",
+      caveat:
+        "That does not mean every Republican platform fits you, and your answers may still include moderate, independent, or cross-party views.",
+    };
+  }
+
+  if (economicLeft && socialLeft) {
+    return {
+      title: "Closer to Democratic or progressive-aligned voters",
+      summary:
+        "Your responses currently align more with center-left or progressive party coalitions, especially on public investment, social reform, inclusion, civil rights, or global cooperation.",
+      caveat:
+        "That does not mean every Democratic platform fits you, and your answers may still include moderate, independent, or cross-party views.",
+    };
+  }
+
+  if (economicRight && socialLeft) {
+    return {
+      title: "Economically center-right, socially moderate or liberal",
+      summary:
+        "Your profile resembles voters who often prefer market-oriented economic policy while taking more moderate or liberal positions on some social and civil-rights issues.",
+      caveat:
+        "In U.S. politics, this can overlap with independents, libertarian-leaning voters, moderate Republicans, or cross-pressured Democrats depending on the issue.",
+    };
+  }
+
+  if (economicLeft && socialRight) {
+    return {
+      title: "Economically center-left, socially traditional",
+      summary:
+        "Your profile resembles voters who support some public investment or worker protections while remaining more traditional on family, faith, cultural change, or public-order issues.",
+      caveat:
+        "In U.S. politics, this can overlap with independents, populist voters, religious Democrats, moderate Republicans, or localist political traditions.",
+    };
+  }
+
+  if (libertyOrInstitutionSkeptic && nationalSovereignty) {
+    return {
+      title: "Independent with liberty and sovereignty emphasis",
+      summary:
+        "Your responses do not map cleanly to one major party, but they show a stronger emphasis on personal liberty, institutional skepticism, national sovereignty, or checks on concentrated power.",
+      caveat:
+        "This may overlap with libertarian, conservative, populist, or independent voters depending on your other issue priorities.",
+    };
+  }
+
+  if (globalCooperation && !economicRight) {
+    return {
+      title: "Moderate Democratic or civic-liberal overlap",
+      summary:
+        "Your responses are generally moderate but show some overlap with Democratic or civic-liberal coalitions on cooperation, rights, public services, or institutional problem-solving.",
+      caveat:
+        "This is an issue-based estimate, not a statement about party registration or candidate preference.",
+    };
+  }
+
+  return {
+    title: "Politically mixed or independent",
+    summary:
+      "Your responses are spread across party coalitions. You appear closer to an independent or mixed profile than to a consistent Democratic or Republican alignment.",
+    caveat:
+      "This means party fit may depend heavily on which issues matter most to you in a given election.",
+  };
+}
+
 function Radar({ scores }: { scores: Record<DimensionKey, number> }) {
   const keys = DIMENSION_ORDER.slice(0, 8);
   const center = 150;
@@ -525,11 +608,13 @@ function Results({
   const [passphrase, setPassphrase] = useState("");
   const [saveError, setSaveError] = useState("");
   const [rating, setRating] = useState<string | null>(null);
+  const [showPartyAlignment, setShowPartyAlignment] = useState(false);
   const { scores, counts } = useMemo(() => scoreAnswers(answers, importance), [answers, importance]);
   const answeredValues = Object.values(answers);
   const answeredCount = answeredValues.filter((v) => v !== null && v !== undefined).length;
   const uncertainCount = answeredValues.filter((v) => v === 0 || v === null).length;
   const confidence = Math.round(72 + (answeredCount / QUESTIONS.length) * 23 - uncertainCount * 0.35);
+  const alignment = useMemo(() => partyAlignment(scores), [scores]);
 
   const rankedValues = useMemo(() => {
     return QUESTIONS.filter((question) => answers[question.id] !== null && answers[question.id] !== undefined)
@@ -703,6 +788,31 @@ function Results({
               Results can change as your experiences and priorities change. Political labels also mean different
               things in different places, so this summary is best used as a starting point for reflection.
             </p>
+          </section>
+
+          <section className="result-card party-reveal">
+            <div>
+              <span className="card-kicker">Optional party alignment</span>
+              <h2>Reveal an estimated party fit</h2>
+              <p>
+                Party alignment is hidden by default because the assessment is designed around values and issues.
+                You can reveal an approximate U.S. party-coalition comparison if you want that extra context.
+              </p>
+            </div>
+            {!showPartyAlignment ? (
+              <button className="button secondary" onClick={() => setShowPartyAlignment(true)}>
+                <Eye size={16} /> Reveal party alignment
+              </button>
+            ) : (
+              <div className="party-result">
+                <strong>{alignment.title}</strong>
+                <p>{alignment.summary}</p>
+                <small>{alignment.caveat}</small>
+                <button className="button ghost" onClick={() => setShowPartyAlignment(false)}>
+                  Hide party alignment
+                </button>
+              </div>
+            )}
           </section>
         </div>
       )}
