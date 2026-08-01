@@ -15,6 +15,9 @@ personal information.
   leakage.
 - No assessment answer is sent to a server, advertiser, analytics provider,
   campaign, political party, or other third party in the current implementation.
+- Database credentials must stay in `.env.local` or hosting environment variables.
+  Do not commit live secrets. Server-side database helpers must not be imported by
+  client components.
 - `npm run verify` performs a full dependency audit followed by a production build.
 
 ## Administration portal

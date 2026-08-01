@@ -32,6 +32,7 @@ The prototype is designed around privacy and transparency:
 - TypeScript
 - Tailwind CSS
 - Lucide React icons
+- MySQL via `mysql2`
 
 ## Local Development
 
@@ -58,6 +59,15 @@ Run the production build:
 ```bash
 npm start
 ```
+
+Create a local environment file before using database-backed routes:
+
+```bash
+cp .env.example .env.local
+```
+
+Then set `DB_PASSWORD` in `.env.local`. The MySQL health endpoint is available at
+`/api/db/health` and runs a server-side `SELECT 1` check.
 
 Run verification:
 
@@ -106,4 +116,3 @@ Before production use, the admin portal should be backed by authenticated APIs, 
 - Respectful of diverse viewpoints
 - Privacy-preserving by default
 - Explainable scoring with no hidden logic
-
