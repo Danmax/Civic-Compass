@@ -74,6 +74,13 @@ For the hosted site, use the local MySQL target provided by the host, usually
 `DB_HOST=localhost`. If the host provides a Unix socket, set `DB_SOCKET`; it will
 take precedence over `DB_HOST` and `DB_PORT`.
 
+The app also accepts common hosting aliases:
+
+- `DB_DATABASE`, `MYSQL_DATABASE`, `MYSQL_DB`, or `DATABASE_NAME` for `DB_NAME`
+- `DB_PASS`, `MYSQL_PASSWORD`, or `DATABASE_PASSWORD` for `DB_PASSWORD`
+- `MYSQL_USER` or `DATABASE_USER` for `DB_USER`
+- `MYSQL_HOST` or `DATABASE_HOST` for `DB_HOST`
+
 Create the database tables with:
 
 ```bash

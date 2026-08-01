@@ -29,37 +29,44 @@ async function loadEnvFile(fileName) {
   }
 }
 
-function requireEnv(name) {
-  const value = process.env[name];
+function requireEnv(name, aliases = []) {
+  const keys = [name, ...aliases];
+  const value = keys.map((key) => process.env[key]).find(Boolean);
 
   if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
+    throw new Error(`Missing required environment variable: ${keys.join(" or ")}`);
   }
 
   return value;
+}
+
+function optionalEnv(name, aliases = []) {
+  return [name, ...aliases].map((key) => process.env[key]).find(Boolean);
 }
 
 await loadEnvFile(".env.local");
 await loadEnvFile(".env");
 
 function getConnectionTarget() {
-  if (process.env.DB_SOCKET) {
+  const socketPath = optionalEnv("DB_SOCKET", ["MYSQL_SOCKET"]);
+
+  if (socketPath) {
     return {
-      socketPath: process.env.DB_SOCKET,
+      socketPath,
     };
   }
 
   return {
-    host: requireEnv("DB_HOST"),
-    port: Number(process.env.DB_PORT ?? 3306),
+    host: requireEnv("DB_HOST", ["MYSQL_HOST", "DATABASE_HOST"]),
+    port: Number(optionalEnv("DB_PORT", ["MYSQL_PORT", "DATABASE_PORT"]) ?? 3306),
   };
 }
 
 const connection = await mysql.createConnection({
   ...getConnectionTarget(),
-  database: requireEnv("DB_NAME"),
-  user: requireEnv("DB_USER"),
-  password: requireEnv("DB_PASSWORD"),
+  database: requireEnv("DB_NAME", ["DB_DATABASE", "MYSQL_DATABASE", "MYSQL_DB", "DATABASE_NAME"]),
+  user: requireEnv("DB_USER", ["MYSQL_USER", "DATABASE_USER"]),
+  password: requireEnv("DB_PASSWORD", ["DB_PASS", "MYSQL_PASSWORD", "DATABASE_PASSWORD"]),
   multipleStatements: true,
 });
 
