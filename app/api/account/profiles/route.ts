@@ -5,6 +5,7 @@ import type { RowDataPacket } from "mysql2";
 import { validateAssessmentPayload } from "@/lib/assessment";
 import { getCurrentUser } from "@/lib/auth";
 import { getDbPool } from "@/lib/db";
+import { insertUserProfileResponses } from "@/lib/profile-responses";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -69,24 +70,37 @@ export async function POST(request: Request) {
       ? body.title.trim().slice(0, 140)
       : `${profile.mode === "quick" ? "Quick" : "Full"} assessment`;
     const publicId = randomUUID();
+    const connection = await getDbPool().getConnection();
 
-    await getDbPool().execute(
-      `INSERT INTO user_assessment_profiles
-        (public_id, user_id, title, mode, answered_count, skipped_count, confidence, answers_json, importance_json, scores_json)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        publicId,
-        user.id,
-        title,
-        profile.mode,
-        profile.answeredCount,
-        profile.skippedCount,
-        profile.confidence,
-        JSON.stringify(profile.answers),
-        JSON.stringify(profile.importance),
-        JSON.stringify(profile.scores),
-      ],
-    );
+    try {
+      await connection.beginTransaction();
+      const [result] = await connection.execute(
+        `INSERT INTO user_assessment_profiles
+          (public_id, user_id, title, mode, answered_count, skipped_count, confidence, answers_json, importance_json, scores_json)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          publicId,
+          user.id,
+          title,
+          profile.mode,
+          profile.answeredCount,
+          profile.skippedCount,
+          profile.confidence,
+          JSON.stringify(profile.answers),
+          JSON.stringify(profile.importance),
+          JSON.stringify(profile.scores),
+        ],
+      );
+      const insertId = "insertId" in result ? result.insertId : 0;
+
+      await insertUserProfileResponses(connection, insertId, profile.answers, profile.importance);
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
 
     return NextResponse.json({
       ok: true,
