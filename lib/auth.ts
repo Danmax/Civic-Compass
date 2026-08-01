@@ -146,6 +146,14 @@ export function validateSignupInput(input: unknown) {
   return { email, password, displayName };
 }
 
+export function validatePassword(password: unknown) {
+  if (typeof password !== "string" || password.length < 10) {
+    throw new Error("Use a password of at least 10 characters.");
+  }
+
+  return password;
+}
+
 export async function createUser(email: string, password: string, displayName: string) {
   const publicId = randomUUID();
   const passwordHash = await hashPassword(password);
@@ -171,6 +179,15 @@ export async function findUserForLogin(email: string) {
   const [rows] = await getDbPool().execute<(UserRow & { password_hash: string })[]>(
     "SELECT id, public_id, email, display_name, role, password_hash FROM users WHERE email = ? LIMIT 1",
     [normalizeEmail(email)],
+  );
+
+  return rows[0] ?? null;
+}
+
+export async function findUserByIdWithPassword(userId: number) {
+  const [rows] = await getDbPool().execute<(UserRow & { password_hash: string })[]>(
+    "SELECT id, public_id, email, display_name, role, password_hash FROM users WHERE id = ? LIMIT 1",
+    [userId],
   );
 
   return rows[0] ?? null;

@@ -14,6 +14,9 @@ personal information.
   stored in MySQL.
 - Login sessions use opaque random tokens stored in HTTP-only cookies. MySQL stores
   only SHA-256 hashes of those session tokens.
+- Password changes revoke existing sessions so the user must log in again.
+- Account deletion requires password confirmation and cascades user-owned sessions
+  and saved assessment profiles through database foreign keys.
 - The application sends a restrictive Content Security Policy and headers that
   prevent framing, MIME sniffing, unnecessary browser permissions, and referrer
   leakage.

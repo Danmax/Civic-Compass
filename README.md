@@ -98,6 +98,9 @@ Account routes:
 - `/api/auth/logout` - revoke the current session
 - `/api/auth/me` - return the current session user
 - `/api/account/profiles` - list or save authenticated assessment profiles
+- `/api/account/profiles/[id]` - fetch, rename, or delete a saved profile owned by the current user
+- `/api/account` - fetch account details, update display name/password, or delete the account
+- `/api/admin/metrics` - role-protected MySQL metrics for admins and researchers
 
 Run verification:
 
@@ -138,6 +141,8 @@ Before production use, the admin portal should be backed by authenticated APIs, 
 - Analytics values are illustrative.
 - Percentiles are illustrative and not demographic predictions.
 - The admin portal does not yet persist edits to a backend.
+- The admin portal route is protected by login and requires `admin` or `researcher`
+  role, but most admin screens still use demonstration data.
 - Anonymous research snapshots are persisted only when a user explicitly submits
   one from the results screen.
 - Account-saved assessment history is persisted only for logged-in users who

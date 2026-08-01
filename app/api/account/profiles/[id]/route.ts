@@ -69,6 +69,40 @@ export async function GET(
   });
 }
 
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const user = await getCurrentUser();
+
+  if (!user) {
+    return NextResponse.json({ ok: false, error: "Authentication required." }, { status: 401 });
+  }
+
+  const body = await request.json() as { title?: unknown };
+  const title = typeof body.title === "string" ? body.title.trim() : "";
+
+  if (title.length < 2 || title.length > 140) {
+    return NextResponse.json(
+      { ok: false, error: "Profile title must be 2 to 140 characters." },
+      { status: 400 },
+    );
+  }
+
+  const { id } = await params;
+  const [result] = await getDbPool().execute(
+    "UPDATE user_assessment_profiles SET title = ? WHERE public_id = ? AND user_id = ?",
+    [title, id, user.id],
+  );
+  const affectedRows = "affectedRows" in result ? result.affectedRows : 0;
+
+  if (!affectedRows) {
+    return NextResponse.json({ ok: false, error: "Profile not found." }, { status: 404 });
+  }
+
+  return NextResponse.json({ ok: true, profile: { id, title } });
+}
+
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
