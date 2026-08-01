@@ -1774,6 +1774,175 @@ fieldset {
   font-size: 10px;
 }
 
+.account-shell {
+  min-height: 100vh;
+  padding: 34px clamp(18px, 6vw, 88px) 70px;
+  background: var(--cream);
+}
+
+.account-header {
+  max-width: 1040px;
+  margin: 0 auto 24px;
+}
+
+.account-header > div {
+  margin-top: 34px;
+}
+
+.account-header h1 {
+  margin: 24px 0 8px;
+  font-family: var(--font-serif), serif;
+  font-size: clamp(38px, 5vw, 64px);
+  font-weight: 500;
+}
+
+.account-header p {
+  max-width: 560px;
+  margin: 0;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.account-grid,
+.account-auth {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.account-grid {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  gap: 16px;
+}
+
+.account-auth {
+  max-width: 460px;
+}
+
+.account-panel {
+  padding: 28px 30px;
+  background: var(--paper);
+  border: 1px solid #dee1db;
+  border-radius: 11px;
+}
+
+.account-profile {
+  display: grid;
+  grid-template-columns: 45px 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.account-profile .button {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.account-panel h2 {
+  margin: 6px 0 5px;
+  font-family: var(--font-serif), serif;
+  font-size: 24px;
+  font-weight: 500;
+}
+
+.account-panel p,
+.account-panel small {
+  color: #6f7b73;
+  line-height: 1.5;
+}
+
+.auth-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-bottom: 18px;
+}
+
+.auth-tabs button {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  background: #f5f6f2;
+  color: #66736b;
+  border: 1px solid #dfe2dc;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.auth-tabs button.active {
+  background: var(--forest);
+  color: white;
+  border-color: var(--forest);
+}
+
+.account-form {
+  display: grid;
+  gap: 12px;
+}
+
+.account-form label > span {
+  display: block;
+  margin-bottom: 6px;
+  color: #68756d;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.account-form input {
+  width: 100%;
+  height: 42px;
+  padding: 0 12px;
+  background: white;
+  border: 1px solid #ccd5ce;
+  border-radius: 6px;
+  outline: none;
+}
+
+.account-form input:focus {
+  border-color: var(--forest);
+  box-shadow: 0 0 0 3px rgba(31, 89, 68, .1);
+}
+
+.account-form small[role="alert"] {
+  color: #9a4940;
+  font-size: 10px;
+}
+
+.profile-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.profile-list > div {
+  min-height: 58px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #f6f6f1;
+  border: 1px solid #e1e4de;
+  border-radius: 7px;
+}
+
+.profile-list strong,
+.profile-list small {
+  display: block;
+}
+
+.profile-list small {
+  margin-top: 4px;
+  font-size: 10px;
+}
+
+.profile-list span {
+  color: var(--forest);
+  font-weight: 800;
+}
+
 /* Issues and scoring */
 .issue-list {
   display: flex;
@@ -2058,6 +2227,7 @@ fieldset {
   .quiz-aside { display: none; }
   .result-summary-grid, .values-grid, .party-reveal { grid-template-columns: 1fr; }
   .result-followup { grid-template-columns: 1fr; }
+  .account-grid { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 650px) {
@@ -2097,6 +2267,9 @@ fieldset {
   .result-card { padding: 23px 20px; }
   .score-grid { grid-template-columns: 1fr; }
   .result-section-heading { align-items: flex-start; flex-direction: column; gap: 10px; }
+  .account-shell { padding: 24px 16px 52px; }
+  .account-panel { padding: 23px 20px; }
+  .account-profile { grid-template-columns: 42px 1fr; }
   .result-section-heading > p { text-align: left; }
   .political-map { width: calc(100% - 50px); }
   .interpretation { padding: 34px 25px; }

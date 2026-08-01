@@ -10,6 +10,10 @@ personal information.
 - Optional browser saves require a user-provided passphrase.
 - Saved profiles use PBKDF2-SHA256 with 250,000 iterations and AES-256-GCM.
 - The passphrase is never written to storage and cannot be recovered.
+- Account passwords are hashed server-side with Node `crypto.scrypt` before being
+  stored in MySQL.
+- Login sessions use opaque random tokens stored in HTTP-only cookies. MySQL stores
+  only SHA-256 hashes of those session tokens.
 - The application sends a restrictive Content Security Policy and headers that
   prevent framing, MIME sniffing, unnecessary browser permissions, and referrer
   leakage.
@@ -19,6 +23,8 @@ personal information.
   accuracy rating, and a hashed user-agent string for basic duplicate analysis.
   They do not include name, email, passphrase, raw IP address, or local encrypted
   profile data.
+- Logged-in account profile saves include answers, importance settings, scores,
+  confidence, and profile metadata associated with the authenticated user.
 - Database credentials must stay in `.env.local` or hosting environment variables.
   Do not commit live secrets. Server-side database helpers must not be imported by
   client components.

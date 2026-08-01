@@ -88,6 +88,7 @@ function Header({
       <nav className={`nav-links ${open ? "is-open" : ""}`} aria-label="Main navigation">
         <button onClick={onHome}>How it works</button>
         <button onClick={onHome}>Our methodology</button>
+        <Link href="/account">Account</Link>
         <Link href="/admin">For researchers</Link>
         {screen !== "quiz" && (
           <button className="nav-cta" onClick={() => document.getElementById("privacy")?.scrollIntoView()}>
@@ -635,6 +636,9 @@ function Results({
   const [remoteSaving, setRemoteSaving] = useState(false);
   const [remoteSavedId, setRemoteSavedId] = useState<string | null>(null);
   const [remoteSaveError, setRemoteSaveError] = useState("");
+  const [accountSaving, setAccountSaving] = useState(false);
+  const [accountSavedId, setAccountSavedId] = useState<string | null>(null);
+  const [accountSaveError, setAccountSaveError] = useState("");
   const [showPartyAlignment, setShowPartyAlignment] = useState(false);
   const { scores, counts } = useMemo(() => scoreAnswers(answers, importance), [answers, importance]);
   const answeredValues = Object.values(answers);
@@ -697,6 +701,37 @@ function Results({
       setRemoteSaveError(error instanceof Error ? error.message : "The profile could not be saved.");
     } finally {
       setRemoteSaving(false);
+    }
+  };
+
+  const saveProfileToAccount = async () => {
+    setAccountSaving(true);
+    setAccountSaveError("");
+
+    try {
+      const response = await fetch("/api/account/profiles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          title: `${isPreview ? "Quick" : "Full"} assessment - ${new Date().toLocaleDateString()}`,
+          mode,
+          answers,
+          importance,
+        }),
+      });
+      const body = await response.json() as { ok?: boolean; profile?: { id: string }; error?: string };
+
+      if (!response.ok || !body.ok || !body.profile?.id) {
+        throw new Error(body.error ?? "The profile could not be saved to your account.");
+      }
+
+      setAccountSavedId(body.profile.id);
+    } catch (error) {
+      setAccountSaveError(error instanceof Error ? error.message : "The profile could not be saved to your account.");
+    } finally {
+      setAccountSaving(false);
     }
   };
 
@@ -1101,6 +1136,26 @@ function Results({
             onClick={submitAnonymousProfile}
           >
             {remoteSaving ? "Submitting..." : remoteSavedId ? "Submitted" : "Submit anonymously"}
+          </button>
+        </article>
+        <article className="save-result-card research-card">
+          <div className="save-icon"><Users /></div>
+          <div>
+            <span className="card-kicker">Account profile</span>
+            <h2>{accountSavedId ? "Saved to your account" : "Save this profile to your account"}</h2>
+            <p>
+              Account saves let you review this assessment from the account page later. You must be logged in
+              before saving to your profile history.
+            </p>
+            {accountSaveError && <small role="alert">{accountSaveError}</small>}
+            {accountSavedId && <small>Saved profile ID: {accountSavedId}</small>}
+          </div>
+          <button
+            className="button secondary"
+            disabled={accountSaving || Boolean(accountSavedId)}
+            onClick={saveProfileToAccount}
+          >
+            {accountSaving ? "Saving..." : accountSavedId ? "Saved" : "Save to account"}
           </button>
         </article>
       </section>

@@ -13,6 +13,7 @@ Civic Compass is a neutral political values assessment prototype built with Next
 - Educational context for each issue area
 - Anonymous-by-default experience
 - Optional encrypted local profile saving
+- Optional account login and server-side saved assessment history
 - Admin portal prototype for question governance, scoring review, analytics, version management, and bias review
 
 ## Privacy Position
@@ -73,10 +74,20 @@ Create the database tables with:
 
 ```bash
 mysql -h srv2104.hstgr.io -u u130206374_civicAdmin -p u130206374_civic < sql/001_create_assessment_profiles.sql
+mysql -h srv2104.hstgr.io -u u130206374_civicAdmin -p u130206374_civic < sql/002_create_users_sessions_profiles.sql
 ```
 
 The `/api/profiles` endpoint stores opt-in anonymous assessment snapshots for
 aggregate question-quality review.
+
+Account routes:
+
+- `/account` - login, signup, logout, and saved assessment history
+- `/api/auth/signup` - create an account and session
+- `/api/auth/login` - create a session for an existing account
+- `/api/auth/logout` - revoke the current session
+- `/api/auth/me` - return the current session user
+- `/api/account/profiles` - list or save authenticated assessment profiles
 
 Run verification:
 
@@ -87,9 +98,12 @@ npm run verify
 ## Project Structure
 
 - `app/page.tsx` - main assessment, quiz flow, results, and profile UI
+- `app/account/page.tsx` - account login, signup, and saved profile history UI
 - `app/data.ts` - dimensions, categories, questions, answer choices, and scoring weights
 - `app/admin/page.tsx` - admin portal prototype
 - `app/globals.css` - application styling and responsive layout
+- `lib/auth.ts` - password hashing, session cookies, and user lookup helpers
+- `lib/db.ts` - server-only MySQL connection pool
 - `next.config.ts` - Next.js configuration and browser security headers
 - `SECURITY.md` - security notes and implementation caveats
 
@@ -116,6 +130,8 @@ Before production use, the admin portal should be backed by authenticated APIs, 
 - The admin portal does not yet persist edits to a backend.
 - Anonymous research snapshots are persisted only when a user explicitly submits
   one from the results screen.
+- Account-saved assessment history is persisted only for logged-in users who
+  explicitly choose to save a profile to their account.
 - Educational reading entries are placeholders for curated source links.
 - Party alignment is an optional estimate based on issue responses, not a definitive label.
 
