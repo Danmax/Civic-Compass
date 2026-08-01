@@ -6,7 +6,7 @@ export type QuizMode = "quick" | "full";
 export type DimensionScores = Record<DimensionKey, number>;
 
 const ALLOWED_ANSWERS = new Set([-3, -2, -1, 0, 1, 2, 3]);
-const ALLOWED_IMPORTANCE = new Set([1, 1.2, 1.4]);
+const ALLOWED_IMPORTANCE = new Set([0.75, 1, 1.2, 1.4]);
 const QUESTION_IDS = new Set(QUESTIONS.map((question) => question.id));
 
 export function scoreAssessment(answers: AnswerMap, importance: ImportanceMap) {

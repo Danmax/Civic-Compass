@@ -85,6 +85,7 @@ Create the database tables with:
 
 ```bash
 npm run db:migrate
+npm run db:seed:assessment
 ```
 
 Or apply individual migrations manually:
