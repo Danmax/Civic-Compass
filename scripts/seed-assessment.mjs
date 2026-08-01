@@ -1,4 +1,5 @@
 import { readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import { createRequire } from "node:module";
 import path from "node:path";
 import vm from "node:vm";
@@ -11,6 +12,17 @@ const VERSION_KEY = "2026.2";
 const VERSION_TITLE = "Civic Compass 2026.2";
 const DIMENSION_ORDER = ["economic", "social", "liberty", "global", "justice", "markets", "identity", "change", "trust", "faith"];
 const CATEGORY_ORDER = ["economy", "immigration", "justice", "family", "equal", "rights", "institutions"];
+
+function stableUuid(input) {
+  const hash = createHash("sha1").update(`civic-compass:${input}`).digest();
+
+  hash[6] = (hash[6] & 0x0f) | 0x50;
+  hash[8] = (hash[8] & 0x3f) | 0x80;
+
+  const hex = hash.subarray(0, 16).toString("hex");
+
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
 
 async function loadAssessmentData() {
   const sourcePath = path.join(root, "app/data.ts");
@@ -50,10 +62,10 @@ try {
   await connection.beginTransaction();
 
   await connection.execute(
-    `INSERT INTO assessment_versions (version_key, title, status, published_at)
-     VALUES (?, ?, 'published', NOW())
+    `INSERT INTO assessment_versions (public_id, version_key, title, status, published_at)
+     VALUES (?, ?, ?, 'published', NOW())
      ON DUPLICATE KEY UPDATE title = VALUES(title), status = 'published'`,
-    [VERSION_KEY, VERSION_TITLE],
+    [stableUuid(`version:${VERSION_KEY}`), VERSION_KEY, VERSION_TITLE],
   );
   const versionId = await getId(
     connection,
@@ -66,15 +78,15 @@ try {
 
     await connection.execute(
       `INSERT INTO assessment_dimensions
-        (dimension_key, name, low_label, high_label, explanation, display_order)
-       VALUES (?, ?, ?, ?, ?, ?)
+        (public_id, dimension_key, name, low_label, high_label, explanation, display_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
         name = VALUES(name),
         low_label = VALUES(low_label),
         high_label = VALUES(high_label),
         explanation = VALUES(explanation),
         display_order = VALUES(display_order)`,
-      [key, dimension.name, dimension.low, dimension.high, dimension.explanation, index + 1],
+      [stableUuid(`dimension:${key}`), key, dimension.name, dimension.low, dimension.high, dimension.explanation, index + 1],
     );
   }
 
@@ -83,8 +95,8 @@ try {
 
     await connection.execute(
       `INSERT INTO assessment_categories
-        (category_key, name, short_label, description, history, viewpoints, debate, display_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        (public_id, category_key, name, short_label, description, history, viewpoints, debate, display_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
         name = VALUES(name),
         short_label = VALUES(short_label),
@@ -93,7 +105,7 @@ try {
         viewpoints = VALUES(viewpoints),
         debate = VALUES(debate),
         display_order = VALUES(display_order)`,
-      [key, category.name, category.short, category.description, category.history, category.viewpoints, category.debate, index + 1],
+      [stableUuid(`category:${key}`), key, category.name, category.short, category.description, category.history, category.viewpoints, category.debate, index + 1],
     );
     const categoryId = await getId(
       connection,
@@ -103,34 +115,34 @@ try {
 
     for (const [readingIndex, title] of category.reading.entries()) {
       await connection.execute(
-        `INSERT INTO assessment_category_readings (category_id, title, url, display_order)
-         VALUES (?, ?, NULL, ?)
+        `INSERT INTO assessment_category_readings (public_id, category_id, title, url, display_order)
+         VALUES (?, ?, ?, NULL, ?)
          ON DUPLICATE KEY UPDATE display_order = VALUES(display_order)`,
-        [categoryId, title, readingIndex + 1],
+        [stableUuid(`reading:${key}:${title}`), categoryId, title, readingIndex + 1],
       );
     }
   }
 
   for (const [index, answer] of ANSWERS.entries()) {
     await connection.execute(
-      `INSERT INTO assessment_answer_choices (label, short_label, answer_value, display_order)
-       VALUES (?, ?, ?, ?)
+      `INSERT INTO assessment_answer_choices (public_id, label, short_label, answer_value, display_order)
+       VALUES (?, ?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
         label = VALUES(label),
         short_label = VALUES(short_label),
         display_order = VALUES(display_order)`,
-      [answer.label, answer.short, answer.value, index + 1],
+      [stableUuid(`answer:${answer.value}`), answer.label, answer.short, answer.value, index + 1],
     );
   }
 
   for (const [index, importance] of IMPORTANCE.entries()) {
     await connection.execute(
-      `INSERT INTO assessment_importance_choices (label, multiplier, display_order)
-       VALUES (?, ?, ?)
+      `INSERT INTO assessment_importance_choices (public_id, label, multiplier, display_order)
+       VALUES (?, ?, ?, ?)
        ON DUPLICATE KEY UPDATE
         label = VALUES(label),
         display_order = VALUES(display_order)`,
-      [importance.label, importance.value, index + 1],
+      [stableUuid(`importance:${importance.value}`), importance.label, importance.value, index + 1],
     );
   }
 
@@ -143,8 +155,8 @@ try {
 
     await connection.execute(
       `INSERT INTO assessment_questions
-        (version_id, question_number, category_id, statement, context, value_label, is_active, display_order)
-       VALUES (?, ?, ?, ?, ?, ?, TRUE, ?)
+        (public_id, version_id, question_number, category_id, statement, context, value_label, is_active, display_order)
+       VALUES (?, ?, ?, ?, ?, ?, ?, TRUE, ?)
        ON DUPLICATE KEY UPDATE
         category_id = VALUES(category_id),
         statement = VALUES(statement),
@@ -152,7 +164,7 @@ try {
         value_label = VALUES(value_label),
         is_active = TRUE,
         display_order = VALUES(display_order)`,
-      [versionId, question.id, categoryId, question.statement, question.context, question.value, index + 1],
+      [stableUuid(`question:${VERSION_KEY}:${question.id}`), versionId, question.id, categoryId, question.statement, question.context, question.value, index + 1],
     );
     const questionId = await getId(
       connection,
@@ -173,8 +185,8 @@ try {
       );
 
       await connection.execute(
-        "INSERT INTO assessment_question_weights (question_id, dimension_id, weight) VALUES (?, ?, ?)",
-        [questionId, dimensionId, weight.weight],
+        "INSERT INTO assessment_question_weights (public_id, question_id, dimension_id, weight) VALUES (?, ?, ?, ?)",
+        [stableUuid(`weight:${VERSION_KEY}:${question.id}:${weight.dimension}`), questionId, dimensionId, weight.weight],
       );
     }
   }

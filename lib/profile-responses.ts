@@ -1,5 +1,6 @@
 import "server-only";
 
+import { randomUUID } from "crypto";
 import type { PoolConnection } from "mysql2/promise";
 
 import type { AnswerMap, ImportanceMap } from "@/lib/assessment";
@@ -45,6 +46,7 @@ async function insertProfileResponses(
   importance: ImportanceMap,
 ) {
   const rows = Object.entries(answers).map(([questionId, answer]) => [
+    randomUUID(),
     profileId,
     Number(questionId),
     answer,
@@ -56,7 +58,7 @@ async function insertProfileResponses(
   }
 
   await connection.query(
-    `INSERT INTO ${table} (${profileColumn}, question_number, answer_value, importance_multiplier)
+    `INSERT INTO ${table} (public_id, ${profileColumn}, question_number, answer_value, importance_multiplier)
      VALUES ?`,
     [rows],
   );
