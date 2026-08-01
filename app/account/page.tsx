@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Compass, LogIn, LogOut, ShieldCheck, UserPlus } from "lucide-react";
+import { ArrowLeft, Compass, LogIn, LogOut, ShieldCheck, Trash2, UserPlus } from "lucide-react";
 import { FormEvent, useEffect, useState } from "react";
 
 type AuthUser = {
@@ -32,7 +32,10 @@ export default function AccountPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [accountUpdating, setAccountUpdating] = useState(false);
+  const [deletingProfileId, setDeletingProfileId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [accountMessage, setAccountMessage] = useState("");
 
   const loadProfiles = async () => {
     const response = await fetch("/api/account/profiles");
@@ -49,6 +52,7 @@ export default function AccountPage() {
       const response = await fetch("/api/auth/me");
       const body = await response.json() as { user?: AuthUser | null };
       setUser(body.user ?? null);
+      setDisplayName(body.user?.displayName ?? "");
 
       if (body.user) {
         await loadProfiles();
@@ -86,6 +90,7 @@ export default function AccountPage() {
       }
 
       setUser(body.user);
+      setDisplayName(body.user.displayName);
       setPassword("");
       await loadProfiles();
     } catch (authError) {
@@ -99,6 +104,59 @@ export default function AccountPage() {
     await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
     setProfiles([]);
+    setDisplayName("");
+    setPassword("");
+    setAccountMessage("");
+  };
+
+  const updateAccount = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setAccountUpdating(true);
+    setAccountMessage("");
+
+    try {
+      const response = await fetch("/api/account", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ displayName }),
+      });
+      const body = await response.json() as { ok?: boolean; user?: AuthUser; error?: string };
+
+      if (!response.ok || !body.ok || !body.user) {
+        throw new Error(body.error ?? "Unable to update account.");
+      }
+
+      setUser(body.user);
+      setDisplayName(body.user.displayName);
+      setAccountMessage("Account updated.");
+    } catch (updateError) {
+      setAccountMessage(updateError instanceof Error ? updateError.message : "Unable to update account.");
+    } finally {
+      setAccountUpdating(false);
+    }
+  };
+
+  const deleteProfile = async (profileId: string) => {
+    setDeletingProfileId(profileId);
+    setAccountMessage("");
+
+    try {
+      const response = await fetch(`/api/account/profiles/${profileId}`, { method: "DELETE" });
+      const body = await response.json() as { ok?: boolean; error?: string };
+
+      if (!response.ok || !body.ok) {
+        throw new Error(body.error ?? "Unable to delete profile.");
+      }
+
+      setProfiles((current) => current.filter((profile) => profile.id !== profileId));
+      setAccountMessage("Profile deleted.");
+    } catch (deleteError) {
+      setAccountMessage(deleteError instanceof Error ? deleteError.message : "Unable to delete profile.");
+    } finally {
+      setDeletingProfileId(null);
+    }
   };
 
   return (
@@ -129,6 +187,16 @@ export default function AccountPage() {
               <p>{user.email}</p>
               <small>Role: {user.role}</small>
             </div>
+            <form className="account-form account-settings" onSubmit={updateAccount}>
+              <label>
+                <span>Display name</span>
+                <input value={displayName} onChange={(event) => setDisplayName(event.target.value)} autoComplete="name" />
+              </label>
+              {accountMessage && <small>{accountMessage}</small>}
+              <button className="button primary" disabled={accountUpdating}>
+                {accountUpdating ? "Saving..." : "Save account"}
+              </button>
+            </form>
             <button className="button secondary" onClick={logout}><LogOut size={16} /> Log out</button>
           </article>
 
@@ -146,6 +214,14 @@ export default function AccountPage() {
                       <small>{new Date(profile.createdAt).toLocaleDateString()} · {profile.mode} · {profile.answeredCount} answered</small>
                     </div>
                     <span>{profile.confidence}%</span>
+                    <button
+                      className="icon-button"
+                      onClick={() => deleteProfile(profile.id)}
+                      disabled={deletingProfileId === profile.id}
+                      aria-label={`Delete ${profile.title}`}
+                    >
+                      <Trash2 size={16} />
+                    </button>
                   </div>
                 ))}
               </div>

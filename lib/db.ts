@@ -26,11 +26,23 @@ function getSslConfig(): PoolOptions["ssl"] {
   };
 }
 
+function getConnectionTarget() {
+  if (process.env.DB_SOCKET) {
+    return {
+      socketPath: process.env.DB_SOCKET,
+    };
+  }
+
+  return {
+    host: requireEnv("DB_HOST"),
+    port: Number(process.env.DB_PORT ?? 3306),
+  };
+}
+
 export function getDbPool() {
   if (!pool) {
     pool = mysql.createPool({
-      host: requireEnv("DB_HOST"),
-      port: Number(process.env.DB_PORT ?? 3306),
+      ...getConnectionTarget(),
       database: requireEnv("DB_NAME"),
       user: requireEnv("DB_USER"),
       password: requireEnv("DB_PASSWORD"),

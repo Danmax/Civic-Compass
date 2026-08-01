@@ -70,7 +70,17 @@ cp .env.example .env.local
 Then set `DB_PASSWORD` in `.env.local`. The MySQL health endpoint is available at
 `/api/db/health` and runs a server-side `SELECT 1` check.
 
+For the hosted site, use the local MySQL target provided by the host, usually
+`DB_HOST=localhost`. If the host provides a Unix socket, set `DB_SOCKET`; it will
+take precedence over `DB_HOST` and `DB_PORT`.
+
 Create the database tables with:
+
+```bash
+npm run db:migrate
+```
+
+Or apply individual migrations manually:
 
 ```bash
 mysql -h srv2104.hstgr.io -u u130206374_civicAdmin -p u130206374_civic < sql/001_create_assessment_profiles.sql
