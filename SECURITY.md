@@ -35,10 +35,10 @@ personal information.
 
 ## Administration portal
 
-The current administration portal is a static interface using demonstration data.
-It has no database access and cannot mutate question or user records. Authentication,
-role-based access control, audit logs, CSRF protection, request validation, and rate
-limiting are required before connecting it to administrative APIs.
+The administration portal is login-protected and reads aggregate MySQL metrics.
+Most content editing screens are still read-only prototypes. Audit logs, CSRF
+protection, broader request validation, and rate limiting are required before
+enabling administrative mutations.
 
 ## Reporting a concern
 

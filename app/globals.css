@@ -2633,6 +2633,65 @@ fieldset {
 .admin-metrics article p { margin: 0; color: #87928b; font-size: 7px; }
 .admin-metrics article p b { color: #30815e; }
 
+.admin-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #68756d;
+}
+
+.admin-empty.inline {
+  min-height: 52px;
+  padding: 13px 0;
+}
+
+.admin-empty svg {
+  width: 18px;
+  height: 18px;
+  color: var(--forest);
+}
+
+.admin-empty strong {
+  display: block;
+  color: var(--forest);
+  font-size: 11px;
+}
+
+.admin-empty p {
+  margin: 3px 0 0;
+  font-size: 9px;
+}
+
+.live-count-grid {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.live-count-grid div {
+  padding: 16px;
+  background: #f7f7f2;
+  border: 1px solid #e3e6df;
+  border-radius: 8px;
+}
+
+.live-count-grid span {
+  display: block;
+  color: #77847c;
+  font-size: 8px;
+  font-weight: 700;
+}
+
+.live-count-grid strong {
+  display: block;
+  margin-top: 9px;
+  color: var(--forest);
+  font-family: var(--font-serif), serif;
+  font-size: 28px;
+  font-weight: 500;
+}
+
 .admin-chart-grid {
   margin-top: 12px;
   display: grid;

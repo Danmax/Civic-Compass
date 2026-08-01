@@ -24,10 +24,9 @@ import {
   SlidersHorizontal,
   Users,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { CATEGORIES, DIMENSIONS, QUESTIONS, type CategoryKey, type DimensionKey } from "../data";
 
-const statusCycle = ["Published", "Bias review", "Editorial review", "Draft"];
 const categoryColors: Record<string, string> = {
   institutions: "violet",
   economy: "blue",
@@ -38,19 +37,67 @@ const categoryColors: Record<string, string> = {
   rights: "rose",
 };
 
-const healthScore = (statement: string, index: number) => {
+type AdminMetrics = {
+  users: number;
+  accountProfiles: number;
+  anonymousProfiles: number;
+  totalProfiles: number;
+  recentUsers: number;
+  recentAccountProfiles: number;
+  recentAnonymousProfiles: number;
+  savedResponses: number;
+  anonymousResponses: number;
+  totalResponses: number;
+  questionCount: number;
+  averageConfidence: number | null;
+  accountProfilesByMode: Record<string, number>;
+  accuracyRatings: { rating: string; count: number }[];
+  questionStats: {
+    questionNumber: number;
+    total: number;
+    skipped: number;
+    skipRate: number;
+    averageStrength: number | null;
+  }[];
+};
+
+const emptyMetrics: AdminMetrics = {
+  users: 0,
+  accountProfiles: 0,
+  anonymousProfiles: 0,
+  totalProfiles: 0,
+  recentUsers: 0,
+  recentAccountProfiles: 0,
+  recentAnonymousProfiles: 0,
+  savedResponses: 0,
+  anonymousResponses: 0,
+  totalResponses: 0,
+  questionCount: QUESTIONS.length,
+  averageConfidence: null,
+  accountProfilesByMode: {},
+  accuracyRatings: [],
+  questionStats: [],
+};
+
+const formatNumber = (value: number) => new Intl.NumberFormat("en-US").format(value);
+
+const healthScore = (statement: string, stat?: AdminMetrics["questionStats"][number]) => {
   const wordCount = statement.split(/\s+/).length;
   const clarity = Math.max(72, Math.min(99, 104 - wordCount - (statement.includes(",") ? 4 : 0)));
-  const skipRate = Number((1.8 + ((index * 1.45) % 9.6)).toFixed(1));
-  const polarization = Math.min(96, 34 + ((index * 9) % 59));
-  const risk = skipRate > 9 || polarization > 82 || clarity < 82 ? "Watch" : "Healthy";
+  const responseCount = stat?.total ?? 0;
+  const skipRate = stat?.skipRate ?? 0;
+  const polarization = stat?.averageStrength === null || stat?.averageStrength === undefined
+    ? 0
+    : Math.round((stat.averageStrength / 3) * 100);
+  const risk = responseCount === 0 ? "No data" : skipRate > 9 || polarization > 82 || clarity < 82 ? "Watch" : "Healthy";
   const flags = [
+    responseCount === 0 && "Awaiting responses",
     clarity < 84 && "Simplify wording",
     skipRate > 8.5 && "High skip rate",
     polarization > 80 && "Polarizing",
   ].filter(Boolean) as string[];
 
-  return { clarity, skipRate, polarization, risk, flags };
+  return { clarity, skipRate, polarization, responseCount, risk, flags };
 };
 
 const categoryCounts = QUESTIONS.reduce((counts, question) => {
@@ -63,18 +110,22 @@ export default function AdminPage() {
   const [active, setActive] = useState("Overview");
   const [selectedQuestionId, setSelectedQuestionId] = useState(QUESTIONS[0].id);
   const [healthFilter, setHealthFilter] = useState("All");
+  const [metrics, setMetrics] = useState<AdminMetrics>(emptyMetrics);
+  const [metricsLoading, setMetricsLoading] = useState(true);
+  const [metricsError, setMetricsError] = useState("");
   const [testAnswers, setTestAnswers] = useState<Record<string, number>>({
-    economic: 24,
-    social: -16,
-    liberty: -22,
-    global: 12,
-    justice: 8,
+    economic: 0,
+    social: 0,
+    liberty: 0,
+    global: 0,
+    justice: 0,
   });
+  const statsByQuestion = new Map(metrics.questionStats.map((stat) => [stat.questionNumber, stat]));
   const healthRows = QUESTIONS.map((question, index) => ({
     question,
     index,
-    status: statusCycle[index % statusCycle.length],
-    ...healthScore(question.statement, index),
+    status: "Live",
+    ...healthScore(question.statement, statsByQuestion.get(question.id)),
   }));
   const visible = healthRows
     .filter(({ question, risk, status }) => {
@@ -85,12 +136,52 @@ export default function AdminPage() {
     .slice(0, 10);
   const selectedQuestion = QUESTIONS.find((q) => q.id === selectedQuestionId) ?? QUESTIONS[0];
   const dimensionEntries = Object.entries(DIMENSIONS) as [DimensionKey, typeof DIMENSIONS[DimensionKey]][];
-  const pendingReview = useMemo(() => QUESTIONS.filter((_, index) => index % 9 === 0).slice(0, 6), []);
-  const sectionLabel = active === "Overview" ? "Here’s how Civic Compass is performing this assessment cycle." : "Manage assessment content, scoring, and quality controls.";
+  const watchedQuestions = healthRows.filter((row) => row.risk === "Watch").slice(0, 6);
+  const sectionLabel = active === "Overview" ? "Live MySQL counts for Civic Compass activity." : "Manage assessment content, scoring, and quality controls.";
   const watchCount = healthRows.filter((row) => row.risk === "Watch").length;
-  const reviewCount = healthRows.filter((row) => row.status.includes("review")).length;
+  const noDataCount = healthRows.filter((row) => row.risk === "No data").length;
   const averageClarity = Math.round(healthRows.reduce((sum, row) => sum + row.clarity, 0) / healthRows.length);
-  const averageSkip = (healthRows.reduce((sum, row) => sum + row.skipRate, 0) / healthRows.length).toFixed(1);
+  const respondedRows = healthRows.filter((row) => row.responseCount > 0);
+  const averageSkip = respondedRows.length
+    ? (respondedRows.reduce((sum, row) => sum + row.skipRate, 0) / respondedRows.length).toFixed(1)
+    : "0.0";
+  const ratingTotal = metrics.accuracyRatings.reduce((sum, row) => sum + row.count, 0);
+
+  useEffect(() => {
+    let activeRequest = true;
+
+    const loadMetrics = async () => {
+      setMetricsLoading(true);
+      setMetricsError("");
+
+      try {
+        const response = await fetch("/api/admin/metrics");
+        const body = await response.json() as { ok?: boolean; metrics?: AdminMetrics; error?: string };
+
+        if (!response.ok || !body.ok || !body.metrics) {
+          throw new Error(body.error ?? "Unable to load admin metrics.");
+        }
+
+        if (activeRequest) {
+          setMetrics(body.metrics);
+        }
+      } catch (error) {
+        if (activeRequest) {
+          setMetricsError(error instanceof Error ? error.message : "Unable to load admin metrics.");
+        }
+      } finally {
+        if (activeRequest) {
+          setMetricsLoading(false);
+        }
+      }
+    };
+
+    void loadMetrics();
+
+    return () => {
+      activeRequest = false;
+    };
+  }, []);
 
   return (
     <div className="admin-shell">
@@ -120,7 +211,7 @@ export default function AdminPage() {
           ].map(([label, Icon]) => (
             <button key={label as string} onClick={() => setActive(label as string)} className={active === label ? "active" : ""}>
               <Icon /> {label as string}
-              {label === "Bias review" && <i>3</i>}
+              {label === "Bias review" && watchCount > 0 && <i>{watchCount}</i>}
             </button>
           ))}
         </nav>
@@ -152,21 +243,28 @@ export default function AdminPage() {
             </div>
             <div className="release-state">
               <CheckCircle2 />
-              <div><strong>Version 2026.2 is live</strong><small>Published July 18 · 62 questions</small></div>
+              <div><strong>Version 2026.2 is live</strong><small>{metrics.questionCount || QUESTIONS.length} questions · {metricsLoading ? "loading counts" : `${formatNumber(metrics.totalProfiles)} profiles`}</small></div>
               <button>View release</button>
             </div>
           </section>
 
+          {metricsError && (
+            <section className="admin-panel admin-empty">
+              <AlertTriangle />
+              <div><strong>Live metrics unavailable</strong><p>{metricsError}</p></div>
+            </section>
+          )}
+
           <section className="admin-metrics">
             {[
-              { label: "Completion rate", value: "82.4%", delta: "+3.1%", icon: CheckCircle2, note: "vs. previous version" },
-              { label: "Avg. completion time", value: "6m 18s", delta: "−22s", icon: Clock3, note: "within 7 min target" },
-              { label: "Profiles completed", value: "12,842", delta: "+18.6%", icon: Users, note: "anonymous sessions" },
-              { label: "Accuracy rating", value: "4.3 / 5", delta: "+0.2", icon: Gauge, note: "2,109 responses" },
+              { label: "Profiles saved", value: formatNumber(metrics.totalProfiles), delta: `+${formatNumber(metrics.recentAccountProfiles + metrics.recentAnonymousProfiles)}`, icon: CheckCircle2, note: "last 7 days" },
+              { label: "Registered users", value: formatNumber(metrics.users), delta: `+${formatNumber(metrics.recentUsers)}`, icon: Users, note: "last 7 days" },
+              { label: "Question responses", value: formatNumber(metrics.totalResponses), delta: formatNumber(metrics.questionStats.length), icon: Activity, note: "questions with response data" },
+              { label: "Avg. confidence", value: metrics.averageConfidence === null ? "No data" : `${metrics.averageConfidence}%`, delta: formatNumber(ratingTotal), icon: Gauge, note: "accuracy ratings submitted" },
             ].map((metric) => (
               <article key={metric.label}>
                 <div><span>{metric.label}</span><metric.icon /></div>
-                <strong>{metric.value}</strong>
+                <strong>{metricsLoading ? "..." : metric.value}</strong>
                 <p><b>{metric.delta}</b> {metric.note}</p>
               </article>
             ))}
@@ -178,8 +276,8 @@ export default function AdminPage() {
                 {[
                   ["Average clarity", `${averageClarity}%`, "Plain-language score across active prompts", CheckCircle2],
                   ["Watch list", `${watchCount}`, "Questions needing review before release", AlertTriangle],
-                  ["In review", `${reviewCount}`, "Bias or editorial review statuses", ClipboardList],
-                  ["Avg. skip rate", `${averageSkip}%`, "Anonymous completion signal", Activity],
+                  ["Awaiting data", `${noDataCount}`, "Questions with no saved responses yet", ClipboardList],
+                  ["Avg. skip rate", `${averageSkip}%`, "Based on saved response rows", Activity],
                 ].map(([label, value, note, Icon]) => (
                   <article className="governance-card" key={label as string}>
                     <div><span>{label as string}</span><Icon /></div>
@@ -247,12 +345,10 @@ export default function AdminPage() {
             <section className="admin-workbench version-management">
               <div className="version-board">
                 {[
-                  ["2026.3 draft", "22 edits · 5 questions added · scoring unchanged", "Run final bias review"],
-                  ["2026.2 live", "Published July 18 · 62 questions · current production version", "View release notes"],
-                  ["2026.1 archived", "Original neutral profile release · 40 questions", "Compare results"],
-                ].map(([title, note, action], index) => (
+                  ["2026.2 live", `${metrics.questionCount || QUESTIONS.length} questions · current production version`, "View release notes"],
+                ].map(([title, note, action]) => (
                   <article className="admin-panel version-card" key={title}>
-                    <span>{index === 1 ? "Live" : index === 0 ? "Draft" : "Archived"}</span>
+                    <span>Live</span>
                     <h3>{title}</h3>
                     <p>{note}</p>
                     <button>{action}</button>
@@ -260,10 +356,10 @@ export default function AdminPage() {
                 ))}
               </div>
               <article className="admin-panel publish-gates">
-                <div className="panel-header"><div><span>Publish readiness</span><h3>Release gates</h3></div><b>3 / 5 passed</b></div>
+                <div className="panel-header"><div><span>Publish readiness</span><h3>Release gates</h3></div><b>Live data only</b></div>
                 {[
-                  ["Question health review", "2 watch-list items still open", false],
-                  ["Bias review", "3 sensitive prompts need reviewer signoff", false],
+                  ["Question health review", `${watchCount} watch-list items from saved responses`, watchCount === 0],
+                  ["Response coverage", `${noDataCount} questions still awaiting saved responses`, noDataCount === 0],
                   ["Scoring regression test", "All dimension scores within expected range", true],
                   ["Privacy copy", "Anonymous storage language reviewed", true],
                   ["Educational content", "All categories have reading sources", true],
@@ -337,40 +433,43 @@ export default function AdminPage() {
             <section className="admin-workbench review-queue">
               <article className="admin-panel">
                 <div className="panel-header"><div><span>Review queue</span><h3>Questions needing human review</h3></div><button>Assign reviewers</button></div>
-                {pendingReview.map((question, index) => (
+                {watchedQuestions.length ? watchedQuestions.map(({ question, flags }) => (
                   <div className="review-item" key={question.id}>
                     <span>Q{question.id.toString().padStart(2, "0")}</span>
-                    <div><strong>{question.statement}</strong><p>{index % 2 === 0 ? "Sensitive-topic wording" : "High skip-rate watch"}</p></div>
-                    <button>{index % 2 === 0 ? "Review" : "Test"}</button>
+                    <div><strong>{question.statement}</strong><p>{flags.join(", ")}</p></div>
+                    <button>Review</button>
                   </div>
-                ))}
+                )) : (
+                  <div className="admin-empty inline"><CheckCircle2 /><p>No live response-based bias review items yet.</p></div>
+                )}
               </article>
             </section>
           )}
 
           {active === "User feedback" && (
             <section className="admin-workbench feedback-feed">
-              {[
-                ["Mostly accurately", "The spectrum view was useful, but I wanted simpler wording on social issues."],
-                ["Very accurately", "The profile felt nuanced and did not force a party label."],
-                ["Somewhat accurately", "Some questions covered more than one idea and were hard to answer."],
-              ].map(([rating, note]) => (
-                <article className="admin-panel feedback-note" key={note}>
+              {metrics.accuracyRatings.length ? metrics.accuracyRatings.map(({ rating, count }) => (
+                <article className="admin-panel feedback-note" key={rating}>
                   <span>{rating}</span>
-                  <p>{note}</p>
-                  <button>Create editorial task</button>
+                  <p>{formatNumber(count)} submitted ratings</p>
+                  <button>View profiles</button>
                 </article>
-              ))}
+              )) : (
+                <article className="admin-panel feedback-note">
+                  <span>No feedback yet</span>
+                  <p>Accuracy ratings will appear here after users submit anonymous research copies.</p>
+                </article>
+              )}
             </section>
           )}
 
           {active === "Analytics" && (
             <section className="admin-workbench analytics-grid">
               {[
-                ["Most skipped category", "Rights, sex & gender policy", "11.2% skipped"],
-                ["Most polarizing prompt", "Voting rules should prioritize preventing fraud...", "92 polarization"],
-                ["Retake frequency", "18.4%", "users returning within 30 days"],
-                ["Quick-to-full conversion", "41.7%", "preview users starting full assessment"],
+                ["Saved account profiles", formatNumber(metrics.accountProfiles), `${formatNumber(metrics.recentAccountProfiles)} in the last 7 days`],
+                ["Anonymous submissions", formatNumber(metrics.anonymousProfiles), `${formatNumber(metrics.recentAnonymousProfiles)} in the last 7 days`],
+                ["Quick profiles", formatNumber(metrics.accountProfilesByMode.quick ?? 0), "account-saved quick assessments"],
+                ["Full profiles", formatNumber(metrics.accountProfilesByMode.full ?? 0), "account-saved full assessments"],
               ].map(([label, value, note]) => (
                 <article className="admin-panel analytics-card" key={label}>
                   <span>{label}</span>
@@ -384,37 +483,26 @@ export default function AdminPage() {
           {(active === "Overview" || active === "Analytics") && <section className="admin-chart-grid">
             <article className="admin-panel performance-chart">
               <div className="panel-header">
-                <div><span>Assessment activity</span><h3>Completions over time</h3></div>
-                <button>Last 30 days <ChevronDown /></button>
+                <div><span>Assessment activity</span><h3>Live profile totals</h3></div>
+                <button>MySQL counts <ChevronDown /></button>
               </div>
-              <div className="chart-legend"><span><i /> Started</span><span><i /> Completed</span></div>
-              <div className="line-chart">
-                <div className="chart-y"><span>800</span><span>600</span><span>400</span><span>200</span><span>0</span></div>
-                <svg viewBox="0 0 700 190" preserveAspectRatio="none" aria-label="Assessment completions over 30 days">
-                  <defs>
-                    <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0" stopColor="#27644c" stopOpacity=".18" />
-                      <stop offset="1" stopColor="#27644c" stopOpacity="0" />
-                    </linearGradient>
-                  </defs>
-                  {[20, 60, 100, 140, 180].map((y) => <line key={y} x1="0" x2="700" y1={y} y2={y} />)}
-                  <path className="chart-area" d="M0,150 C60,144 70,118 125,124 S210,86 270,103 S348,56 410,77 S493,43 548,61 S632,24 700,39 L700,190 L0,190 Z" />
-                  <path className="chart-start" d="M0,120 C60,126 70,92 125,100 S210,60 270,75 S348,40 410,50 S493,30 548,39 S632,13 700,25" />
-                  <path className="chart-complete" d="M0,150 C60,144 70,118 125,124 S210,86 270,103 S348,56 410,77 S493,43 548,61 S632,24 700,39" />
-                </svg>
-                <div className="chart-x"><span>Jul 1</span><span>Jul 8</span><span>Jul 15</span><span>Jul 22</span><span>Jul 28</span></div>
+              <div className="live-count-grid">
+                <div><span>Anonymous research copies</span><strong>{formatNumber(metrics.anonymousProfiles)}</strong></div>
+                <div><span>Account-saved profiles</span><strong>{formatNumber(metrics.accountProfiles)}</strong></div>
+                <div><span>Normalized response rows</span><strong>{formatNumber(metrics.totalResponses)}</strong></div>
+                <div><span>Registered users</span><strong>{formatNumber(metrics.users)}</strong></div>
               </div>
             </article>
 
             <article className="admin-panel confidence-panel">
               <div className="panel-header"><div><span>Result quality</span><h3>Confidence distribution</h3></div><button aria-label="More"><MoreHorizontal /></button></div>
               <div className="confidence-donut">
-                <div><strong>86%</strong><small>average</small></div>
+                <div><strong>{metrics.averageConfidence === null ? "0%" : `${metrics.averageConfidence}%`}</strong><small>average</small></div>
               </div>
               <div className="donut-legend">
-                <span><i className="high" /> High confidence <b>64%</b></span>
-                <span><i className="medium" /> Moderate <b>28%</b></span>
-                <span><i className="low" /> Low <b>8%</b></span>
+                <span><i className="high" /> Profiles counted <b>{formatNumber(metrics.totalProfiles)}</b></span>
+                <span><i className="medium" /> Ratings submitted <b>{formatNumber(ratingTotal)}</b></span>
+                <span><i className="low" /> Questions with data <b>{formatNumber(metrics.questionStats.length)}</b></span>
               </div>
             </article>
           </section>}
@@ -452,16 +540,16 @@ export default function AdminPage() {
                 </tbody>
               </table>
             </div>
-            <div className="table-footer"><span>Showing {visible.length} of {QUESTIONS.length} questions · {watchCount} on watch list</span><button>Export health report <ArrowLeft /></button></div>
+            <div className="table-footer"><span>Showing {visible.length} of {QUESTIONS.length} questions · {watchCount} on watch list · {noDataCount} awaiting responses</span><button>Export health report <ArrowLeft /></button></div>
           </section>}
 
           {(active === "Overview" || active === "Analytics") && <section className="admin-bottom-grid">
             <article className="admin-panel attention-panel">
-              <div className="panel-header"><div><span>Editorial workflow</span><h3>Needs attention</h3></div><b>5 items</b></div>
+              <div className="panel-header"><div><span>Editorial workflow</span><h3>Needs attention</h3></div><b>{watchCount + noDataCount} items</b></div>
               {[
-                ["3 questions awaiting bias review", "Sensitive topics · assigned to 4 reviewers", "Review now"],
-                ["Version 2026.3 has unpublished changes", "12 edits since last release", "Open draft"],
-                ["2 questions exceed skip-rate threshold", "Flagged automatically · >10% skipped", "Investigate"],
+                [`${watchCount} questions on watch list`, "Based on live skip-rate and response-strength data", "Investigate"],
+                [`${noDataCount} questions awaiting responses`, "Saved user data has not reached these questions yet", "Monitor"],
+                [`${ratingTotal} accuracy ratings submitted`, "User feedback count from anonymous research copies", "Review"],
               ].map(([title, note, action], i) => (
                 <div className="attention-row" key={title}>
                   <span className={`attention-icon a${i}`}><Activity /></span>
@@ -472,18 +560,20 @@ export default function AdminPage() {
             </article>
             <article className="admin-panel feedback-panel">
               <div className="panel-header"><div><span>User feedback</span><h3>Perceived accuracy</h3></div><button>View all</button></div>
-              <div className="feedback-bars">
-                {[
-                  ["Very accurately", 42],
-                  ["Mostly accurately", 38],
-                  ["Somewhat accurately", 15],
-                  ["Not very accurately", 4],
-                  ["Not accurately at all", 1],
-                ].map(([label, value]) => (
-                  <div key={label}><span>{label}</span><i><b style={{ width: `${value}%` }} /></i><strong>{value}%</strong></div>
-                ))}
-              </div>
-              <p><b>4.3 / 5</b> average across 2,109 responses</p>
+              {metrics.accuracyRatings.length ? (
+                <>
+                  <div className="feedback-bars">
+                    {metrics.accuracyRatings.map(({ rating, count }) => {
+                      const percent = ratingTotal ? Math.round((count / ratingTotal) * 100) : 0;
+
+                      return <div key={rating}><span>{rating}</span><i><b style={{ width: `${percent}%` }} /></i><strong>{percent}%</strong></div>;
+                    })}
+                  </div>
+                  <p><b>{formatNumber(ratingTotal)}</b> submitted ratings</p>
+                </>
+              ) : (
+                <div className="admin-empty inline"><HelpCircle /> <p>No accuracy feedback has been submitted yet.</p></div>
+              )}
             </article>
           </section>}
         </div>

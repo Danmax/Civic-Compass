@@ -143,18 +143,18 @@ The admin portal is currently a frontend prototype. It includes:
 - Scoring sandbox
 - Category coverage checks
 - Educational content review cards
-- Anonymous analytics summaries
+- MySQL-backed analytics summaries
 - User feedback management
 
 Before production use, the admin portal should be backed by authenticated APIs, role-based access control, audit logs, server-side validation, CSRF protection, and rate limiting.
 
 ## Prototype Caveats
 
-- Analytics values are illustrative.
+- Admin overview and analytics counts are read from MySQL.
 - Percentiles are illustrative and not demographic predictions.
 - The admin portal does not yet persist edits to a backend.
 - The admin portal route is protected by login and requires `admin` or `researcher`
-  role, but most admin screens still use demonstration data.
+  role, but content editing screens are still read-only prototypes.
 - Anonymous research snapshots are persisted only when a user explicitly submits
   one from the results screen.
 - Account-saved assessment history is persisted only for logged-in users who
