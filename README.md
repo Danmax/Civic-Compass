@@ -98,6 +98,10 @@ mysql -h srv2104.hstgr.io -u u130206374_civicAdmin -p u130206374_civic < sql/002
 The `/api/profiles` endpoint stores opt-in anonymous assessment snapshots for
 aggregate question-quality review.
 
+Database records use UUID `public_id` columns for application-facing identifiers.
+Numeric primary keys remain internal implementation details for joins and legacy
+foreign keys.
+
 Account routes:
 
 - `/account` - login, signup, logout, and saved assessment history
