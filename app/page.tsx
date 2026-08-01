@@ -632,6 +632,9 @@ function Results({
   const [passphrase, setPassphrase] = useState("");
   const [saveError, setSaveError] = useState("");
   const [rating, setRating] = useState<string | null>(null);
+  const [remoteSaving, setRemoteSaving] = useState(false);
+  const [remoteSavedId, setRemoteSavedId] = useState<string | null>(null);
+  const [remoteSaveError, setRemoteSaveError] = useState("");
   const [showPartyAlignment, setShowPartyAlignment] = useState(false);
   const { scores, counts } = useMemo(() => scoreAnswers(answers, importance), [answers, importance]);
   const answeredValues = Object.values(answers);
@@ -665,6 +668,37 @@ function Results({
   const leaningEconomic = scores.economic > 12 ? "economically market-oriented" : scores.economic < -12 ? "supportive of public investment" : "economically balanced";
   const leaningSocial = scores.social > 12 ? "cautious about rapid social change" : scores.social < -12 ? "open to social reform" : "moderate on social questions";
   const isPreview = mode === "quick";
+
+  const submitAnonymousProfile = async () => {
+    setRemoteSaving(true);
+    setRemoteSaveError("");
+
+    try {
+      const response = await fetch("/api/profiles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          mode,
+          answers,
+          importance,
+          accuracyRating: rating,
+        }),
+      });
+      const body = await response.json() as { ok?: boolean; id?: string; error?: string };
+
+      if (!response.ok || !body.ok || !body.id) {
+        throw new Error(body.error ?? "The profile could not be saved.");
+      }
+
+      setRemoteSavedId(body.id);
+    } catch (error) {
+      setRemoteSaveError(error instanceof Error ? error.message : "The profile could not be saved.");
+    } finally {
+      setRemoteSaving(false);
+    }
+  };
 
   useEffect(() => {
     setSaved(Boolean(localStorage.getItem("civic-compass-profile")));
@@ -1048,6 +1082,26 @@ function Results({
               ))}
             </div>
           )}
+        </article>
+        <article className="save-result-card research-card">
+          <div className="save-icon"><ShieldCheck /></div>
+          <div>
+            <span className="card-kicker">Optional research copy</span>
+            <h2>{remoteSavedId ? "Anonymous profile submitted" : "Share an anonymous snapshot?"}</h2>
+            <p>
+              This sends your answers, importance settings, scores, and optional accuracy rating to Civic Compass
+              for aggregate quality review. It does not include your name, email, or passphrase.
+            </p>
+            {remoteSaveError && <small role="alert">{remoteSaveError}</small>}
+            {remoteSavedId && <small>Reference ID: {remoteSavedId}</small>}
+          </div>
+          <button
+            className="button secondary"
+            disabled={remoteSaving || Boolean(remoteSavedId)}
+            onClick={submitAnonymousProfile}
+          >
+            {remoteSaving ? "Submitting..." : remoteSavedId ? "Submitted" : "Submit anonymously"}
+          </button>
         </article>
       </section>
 

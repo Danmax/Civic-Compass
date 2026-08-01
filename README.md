@@ -69,6 +69,15 @@ cp .env.example .env.local
 Then set `DB_PASSWORD` in `.env.local`. The MySQL health endpoint is available at
 `/api/db/health` and runs a server-side `SELECT 1` check.
 
+Create the database tables with:
+
+```bash
+mysql -h srv2104.hstgr.io -u u130206374_civicAdmin -p u130206374_civic < sql/001_create_assessment_profiles.sql
+```
+
+The `/api/profiles` endpoint stores opt-in anonymous assessment snapshots for
+aggregate question-quality review.
+
 Run verification:
 
 ```bash
@@ -105,6 +114,8 @@ Before production use, the admin portal should be backed by authenticated APIs, 
 - Analytics values are illustrative.
 - Percentiles are illustrative and not demographic predictions.
 - The admin portal does not yet persist edits to a backend.
+- Anonymous research snapshots are persisted only when a user explicitly submits
+  one from the results screen.
 - Educational reading entries are placeholders for curated source links.
 - Party alignment is an optional estimate based on issue responses, not a definitive label.
 

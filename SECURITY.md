@@ -13,8 +13,12 @@ personal information.
 - The application sends a restrictive Content Security Policy and headers that
   prevent framing, MIME sniffing, unnecessary browser permissions, and referrer
   leakage.
-- No assessment answer is sent to a server, advertiser, analytics provider,
-  campaign, political party, or other third party in the current implementation.
+- Assessment answers are not sent to the server unless the user explicitly submits
+  an anonymous research copy from the results screen.
+- Anonymous research copies include answers, importance settings, scores, optional
+  accuracy rating, and a hashed user-agent string for basic duplicate analysis.
+  They do not include name, email, passphrase, raw IP address, or local encrypted
+  profile data.
 - Database credentials must stay in `.env.local` or hosting environment variables.
   Do not commit live secrets. Server-side database helpers must not be imported by
   client components.
