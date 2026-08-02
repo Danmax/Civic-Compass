@@ -31,6 +31,9 @@ personal information.
 - Database credentials must stay in `.env.local` or hosting environment variables.
   Do not commit live secrets. Server-side database helpers must not be imported by
   client components.
+- OpenAI credentials must stay in server environment variables. AI-generated
+  question drafts must remain admin-only candidates until explicitly saved for
+  review.
 - `npm run verify` performs a full dependency audit followed by a production build.
 
 ## Administration portal

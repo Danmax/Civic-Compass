@@ -117,6 +117,7 @@ Account routes:
 - `/api/admin/bias-review/[id]` - assign, approve, request revision, or resolve review items
 - `/api/admin/bias-review/[id]/comments` - list or add review comments
 - `/api/admin/questions` - list live questions with health metrics or create draft questions
+- `/api/admin/questions/generate` - generate AI-assisted draft question candidates
 - `/api/admin/questions/[id]` - update editable question fields
 - `/api/admin/questions/[id]/status` - move questions through draft, review, approval, publish, archive, or rejection
 - `/api/admin/questions/[id]/comments` - list or add question review comments
@@ -149,6 +150,7 @@ The admin portal is currently a frontend prototype. It includes:
 - Assessment version management
 - Scoring sandbox
 - Category coverage checks
+- AI-assisted question draft generation
 - Educational content review cards
 - MySQL-backed analytics summaries
 - User feedback management
@@ -163,6 +165,9 @@ Before production use, the admin portal should be backed by authenticated APIs, 
 - The admin portal route is protected by login and requires `admin` or `researcher`
   role. Bias review and question workflow are persisted in MySQL; broader content
   editing screens are still read-only prototypes.
+- AI-assisted question generation requires `OPENAI_API_KEY` in server environment
+  variables. Generated questions are candidates only; admins must explicitly save
+  them as drafts before review.
 - Anonymous research snapshots are persisted only when a user explicitly submits
   one from the results screen.
 - Account-saved assessment history is persisted only for logged-in users who

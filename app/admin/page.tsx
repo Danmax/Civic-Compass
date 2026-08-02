@@ -22,6 +22,7 @@ import {
   Settings2,
   ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
   Users,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -119,6 +120,10 @@ type QuestionForm = {
   value: string;
 };
 
+type GeneratedQuestion = QuestionForm & {
+  rationale: string;
+};
+
 const emptyMetrics: AdminMetrics = {
   users: 0,
   accountProfiles: 0,
@@ -207,6 +212,14 @@ export default function AdminPage() {
     category: "institutions",
     value: "",
   });
+  const [aiQuestionForm, setAiQuestionForm] = useState({
+    topic: "",
+    category: "institutions" as CategoryKey,
+    count: 3,
+    guidance: "",
+  });
+  const [aiQuestions, setAiQuestions] = useState<GeneratedQuestion[]>([]);
+  const [aiGenerating, setAiGenerating] = useState(false);
   const [metrics, setMetrics] = useState<AdminMetrics>(emptyMetrics);
   const [metricsLoading, setMetricsLoading] = useState(true);
   const [metricsError, setMetricsError] = useState("");
@@ -394,6 +407,40 @@ export default function AdminPage() {
     } finally {
       setQuestionSaving(false);
     }
+  };
+
+  const generateAiQuestions = async () => {
+    setAiGenerating(true);
+    setQuestionsError("");
+
+    try {
+      const response = await fetch("/api/admin/questions/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(aiQuestionForm),
+      });
+      const body = await response.json() as { ok?: boolean; questions?: GeneratedQuestion[]; error?: string };
+
+      if (!response.ok || !body.ok || !body.questions) {
+        throw new Error(body.error ?? "Unable to generate question drafts.");
+      }
+
+      setAiQuestions(body.questions);
+    } catch (error) {
+      setQuestionsError(error instanceof Error ? error.message : "Unable to generate question drafts.");
+    } finally {
+      setAiGenerating(false);
+    }
+  };
+
+  const useGeneratedQuestion = (question: GeneratedQuestion) => {
+    setQuestionForm({
+      statement: question.statement,
+      context: question.context,
+      category: question.category,
+      value: question.value,
+    });
+    newQuestionPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
   const addQuestionComment = async () => {
@@ -693,6 +740,31 @@ export default function AdminPage() {
                       <select value={questionForm.category} onChange={(event) => setQuestionForm((current) => ({ ...current, category: event.target.value as CategoryKey }))}>
                         {Object.entries(CATEGORIES).map(([key, category]) => <option key={key} value={key}>{category.name}</option>)}
                       </select>
+                    </div>
+                    <div className="ai-question-box">
+                      <h4><Sparkles /> AI draft generator</h4>
+                      <input value={aiQuestionForm.topic} onChange={(event) => setAiQuestionForm((current) => ({ ...current, topic: event.target.value }))} placeholder="Topic or gap to explore" />
+                      <div className="ai-question-controls">
+                        <select value={aiQuestionForm.category} onChange={(event) => setAiQuestionForm((current) => ({ ...current, category: event.target.value as CategoryKey }))}>
+                          {Object.entries(CATEGORIES).map(([key, category]) => <option key={key} value={key}>{category.name}</option>)}
+                        </select>
+                        <input type="number" min="1" max="5" value={aiQuestionForm.count} onChange={(event) => setAiQuestionForm((current) => ({ ...current, count: Number(event.target.value) || 1 }))} />
+                      </div>
+                      <input value={aiQuestionForm.guidance} onChange={(event) => setAiQuestionForm((current) => ({ ...current, guidance: event.target.value }))} placeholder="Optional review guidance" />
+                      <button onClick={generateAiQuestions} disabled={aiGenerating || questionSaving}><Sparkles /> {aiGenerating ? "Generating..." : "Generate drafts"}</button>
+                      {aiQuestions.length > 0 && (
+                        <div className="ai-question-results">
+                          {aiQuestions.map((question) => (
+                            <article key={`${question.category}-${question.statement}`}>
+                              <strong>{question.statement}</strong>
+                              <p>{question.context}</p>
+                              <span>{question.value}</span>
+                              <small>{question.rationale}</small>
+                              <button onClick={() => useGeneratedQuestion(question)}>Use draft</button>
+                            </article>
+                          ))}
+                        </div>
+                      )}
                     </div>
                     <div className="review-comment-box question-comment-box">
                       <input value={questionComment} onChange={(event) => setQuestionComment(event.target.value)} placeholder="Add review comment" />
