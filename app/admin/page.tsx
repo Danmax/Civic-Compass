@@ -50,6 +50,10 @@ type AdminMetrics = {
   totalResponses: number;
   questionCount: number;
   averageConfidence: number | null;
+  biasReviewItems: number;
+  openBiasReviewItems: number;
+  highSeverityBiasReviewItems: number;
+  biasReviewByStatus: Record<string, number>;
   accountProfilesByMode: Record<string, number>;
   accuracyRatings: { rating: string; count: number }[];
   questionStats: {
@@ -59,6 +63,29 @@ type AdminMetrics = {
     skipRate: number;
     averageStrength: number | null;
   }[];
+};
+
+type BiasReviewItem = {
+  id: string;
+  status: "open" | "in_review" | "approved" | "needs_revision" | "resolved";
+  severity: "low" | "medium" | "high";
+  triggerSource: string;
+  triggerSummary: string;
+  question: {
+    id: string;
+    number: number;
+    statement: string;
+    context: string;
+    category: {
+      key: CategoryKey;
+      name: string;
+    };
+  };
+  assignedTo: string | null;
+  createdBy: string | null;
+  commentCount: number;
+  createdAt: string;
+  updatedAt: string;
 };
 
 const emptyMetrics: AdminMetrics = {
@@ -74,6 +101,10 @@ const emptyMetrics: AdminMetrics = {
   totalResponses: 0,
   questionCount: QUESTIONS.length,
   averageConfidence: null,
+  biasReviewItems: 0,
+  openBiasReviewItems: 0,
+  highSeverityBiasReviewItems: 0,
+  biasReviewByStatus: {},
   accountProfilesByMode: {},
   accuracyRatings: [],
   questionStats: [],
@@ -113,6 +144,10 @@ export default function AdminPage() {
   const [metrics, setMetrics] = useState<AdminMetrics>(emptyMetrics);
   const [metricsLoading, setMetricsLoading] = useState(true);
   const [metricsError, setMetricsError] = useState("");
+  const [reviewItems, setReviewItems] = useState<BiasReviewItem[]>([]);
+  const [reviewLoading, setReviewLoading] = useState(true);
+  const [reviewError, setReviewError] = useState("");
+  const [reviewComment, setReviewComment] = useState<Record<string, string>>({});
   const [testAnswers, setTestAnswers] = useState<Record<string, number>>({
     economic: 0,
     social: 0,
@@ -147,6 +182,99 @@ export default function AdminPage() {
     : "0.0";
   const ratingTotal = metrics.accuracyRatings.reduce((sum, row) => sum + row.count, 0);
 
+  const loadReviewItems = async () => {
+    setReviewLoading(true);
+    setReviewError("");
+
+    try {
+      const response = await fetch("/api/admin/bias-review");
+      const body = await response.json() as { ok?: boolean; items?: BiasReviewItem[]; error?: string };
+
+      if (!response.ok || !body.ok || !body.items) {
+        throw new Error(body.error ?? "Unable to load bias review items.");
+      }
+
+      setReviewItems(body.items);
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : "Unable to load bias review items.");
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const updateReviewItem = async (id: string, payload: Record<string, unknown>) => {
+    setReviewError("");
+
+    try {
+      const response = await fetch(`/api/admin/bias-review/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = await response.json() as { ok?: boolean; error?: string };
+
+      if (!response.ok || !body.ok) {
+        throw new Error(body.error ?? "Unable to update review item.");
+      }
+
+      await loadReviewItems();
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : "Unable to update review item.");
+    }
+  };
+
+  const createReviewItem = async (questionNumber: number, triggerSummary: string, severity: "low" | "medium" | "high" = "medium") => {
+    setReviewError("");
+
+    try {
+      const response = await fetch("/api/admin/bias-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questionNumber,
+          severity,
+          triggerSource: "response_signal",
+          triggerSummary,
+        }),
+      });
+      const body = await response.json() as { ok?: boolean; error?: string };
+
+      if (!response.ok || !body.ok) {
+        throw new Error(body.error ?? "Unable to create review item.");
+      }
+
+      await loadReviewItems();
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : "Unable to create review item.");
+    }
+  };
+
+  const addReviewComment = async (id: string) => {
+    const comment = reviewComment[id]?.trim();
+
+    if (!comment) return;
+
+    setReviewError("");
+
+    try {
+      const response = await fetch(`/api/admin/bias-review/${id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comment }),
+      });
+      const body = await response.json() as { ok?: boolean; error?: string };
+
+      if (!response.ok || !body.ok) {
+        throw new Error(body.error ?? "Unable to add comment.");
+      }
+
+      setReviewComment((current) => ({ ...current, [id]: "" }));
+      await loadReviewItems();
+    } catch (error) {
+      setReviewError(error instanceof Error ? error.message : "Unable to add comment.");
+    }
+  };
+
   useEffect(() => {
     let activeRequest = true;
 
@@ -177,6 +305,7 @@ export default function AdminPage() {
     };
 
     void loadMetrics();
+    void loadReviewItems();
 
     return () => {
       activeRequest = false;
@@ -211,7 +340,7 @@ export default function AdminPage() {
           ].map(([label, Icon]) => (
             <button key={label as string} onClick={() => setActive(label as string)} className={active === label ? "active" : ""}>
               <Icon /> {label as string}
-              {label === "Bias review" && watchCount > 0 && <i>{watchCount}</i>}
+              {label === "Bias review" && metrics.openBiasReviewItems > 0 && <i>{metrics.openBiasReviewItems}</i>}
             </button>
           ))}
         </nav>
@@ -432,15 +561,67 @@ export default function AdminPage() {
           {active === "Bias review" && (
             <section className="admin-workbench review-queue">
               <article className="admin-panel">
-                <div className="panel-header"><div><span>Review queue</span><h3>Questions needing human review</h3></div><button>Assign reviewers</button></div>
-                {watchedQuestions.length ? watchedQuestions.map(({ question, flags }) => (
-                  <div className="review-item" key={question.id}>
-                    <span>Q{question.id.toString().padStart(2, "0")}</span>
-                    <div><strong>{question.statement}</strong><p>{flags.join(", ")}</p></div>
-                    <button>Review</button>
+                <div className="panel-header">
+                  <div><span>Review queue</span><h3>Bias review items</h3></div>
+                  <b>{metrics.openBiasReviewItems} open</b>
+                </div>
+                <div className="bias-summary">
+                  {[
+                    ["Open", metrics.biasReviewByStatus.open ?? 0],
+                    ["In review", metrics.biasReviewByStatus.in_review ?? 0],
+                    ["Needs revision", metrics.biasReviewByStatus.needs_revision ?? 0],
+                    ["Approved", metrics.biasReviewByStatus.approved ?? 0],
+                    ["Resolved", metrics.biasReviewByStatus.resolved ?? 0],
+                  ].map(([label, value]) => (
+                    <span key={label as string}><strong>{value as number}</strong>{label as string}</span>
+                  ))}
+                </div>
+
+                {reviewError && <div className="admin-empty inline"><AlertTriangle /><p>{reviewError}</p></div>}
+
+                {reviewItems.length ? reviewItems.map((item) => (
+                  <div className="review-item bias-review-item" key={item.id}>
+                    <span>Q{item.question.number.toString().padStart(2, "0")}</span>
+                    <div>
+                      <div className="bias-review-meta">
+                        <i className={`severity ${item.severity}`}>{item.severity}</i>
+                        <i>{item.status.replace("_", " ")}</i>
+                        <i>{item.commentCount} comments</i>
+                        {item.assignedTo && <i>Assigned to {item.assignedTo}</i>}
+                      </div>
+                      <strong>{item.question.statement}</strong>
+                      <p>{item.triggerSummary}</p>
+                      <label className="review-comment-box">
+                        <input
+                          value={reviewComment[item.id] ?? ""}
+                          onChange={(event) => setReviewComment((current) => ({ ...current, [item.id]: event.target.value }))}
+                          placeholder="Add review note"
+                        />
+                        <button onClick={() => addReviewComment(item.id)}>Comment</button>
+                      </label>
+                    </div>
+                    <div className="review-actions">
+                      <button onClick={() => updateReviewItem(item.id, { assignToSelf: true, status: "in_review", note: "Assigned to self" })}>Assign</button>
+                      <button onClick={() => updateReviewItem(item.id, { status: "approved", note: "Approved in bias review" })}>Approve</button>
+                      <button onClick={() => updateReviewItem(item.id, { status: "needs_revision", note: "Needs revision" })}>Revise</button>
+                      <button onClick={() => updateReviewItem(item.id, { status: "resolved", note: "Resolved" })}>Resolve</button>
+                    </div>
                   </div>
                 )) : (
-                  <div className="admin-empty inline"><CheckCircle2 /><p>No live response-based bias review items yet.</p></div>
+                  <div className="admin-empty inline"><CheckCircle2 /><p>{reviewLoading ? "Loading review items..." : "No persisted bias review items yet."}</p></div>
+                )}
+              </article>
+
+              <article className="admin-panel">
+                <div className="panel-header"><div><span>Response signals</span><h3>Create review items from live data</h3></div><button onClick={loadReviewItems}>Refresh</button></div>
+                {watchedQuestions.length ? watchedQuestions.map(({ question, flags, skipRate, polarization }) => (
+                  <div className="review-item" key={question.id}>
+                    <span>Q{question.id.toString().padStart(2, "0")}</span>
+                    <div><strong>{question.statement}</strong><p>{flags.join(", ")} · {skipRate.toFixed(1)}% skipped · {polarization} response strength</p></div>
+                    <button onClick={() => createReviewItem(question.id, flags.join(", "), polarization > 82 ? "high" : "medium")}>Create</button>
+                  </div>
+                )) : (
+                  <div className="admin-empty inline"><CheckCircle2 /><p>No live response signals currently exceed the review threshold.</p></div>
                 )}
               </article>
             </section>

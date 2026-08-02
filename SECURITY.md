@@ -36,9 +36,9 @@ personal information.
 ## Administration portal
 
 The administration portal is login-protected and reads aggregate MySQL metrics.
-Most content editing screens are still read-only prototypes. Audit logs, CSRF
-protection, broader request validation, and rate limiting are required before
-enabling administrative mutations.
+Bias review actions are persisted with audit events. Most content editing screens
+are still read-only prototypes. CSRF protection, broader request validation, and
+rate limiting are required before expanding administrative mutations.
 
 ## Reporting a concern
 

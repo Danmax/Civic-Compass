@@ -32,6 +32,11 @@ type QuestionStatRow = RowDataPacket & {
   average_strength: string | number | null;
 };
 
+type BiasStatusRow = RowDataPacket & {
+  status: string;
+  count: number;
+};
+
 async function count(query: string) {
   const [rows] = await getDbPool().query<CountRow[]>(query);
 
@@ -59,6 +64,9 @@ export async function GET() {
     savedResponses,
     anonymousResponses,
     questionCount,
+    biasReviewItems,
+    openBiasReviewItems,
+    highSeverityBiasReviewItems,
   ] = await Promise.all([
     count("SELECT COUNT(*) AS count FROM users"),
     count("SELECT COUNT(*) AS count FROM user_assessment_profiles"),
@@ -69,6 +77,9 @@ export async function GET() {
     count("SELECT COUNT(*) AS count FROM user_assessment_profile_responses"),
     count("SELECT COUNT(*) AS count FROM assessment_profile_responses"),
     count("SELECT COUNT(*) AS count FROM assessment_questions WHERE is_active = TRUE"),
+    count("SELECT COUNT(*) AS count FROM bias_review_items"),
+    count("SELECT COUNT(*) AS count FROM bias_review_items WHERE status IN ('open', 'in_review', 'needs_revision')"),
+    count("SELECT COUNT(*) AS count FROM bias_review_items WHERE severity = 'high' AND status IN ('open', 'in_review', 'needs_revision')"),
   ]);
   const [modeRows] = await getDbPool().query<ModeRow[]>(
     `SELECT mode, COUNT(*) AS count
@@ -103,6 +114,11 @@ export async function GET() {
      GROUP BY question_number
      ORDER BY question_number ASC`,
   );
+  const [biasStatusRows] = await getDbPool().query<BiasStatusRow[]>(
+    `SELECT status, COUNT(*) AS count
+     FROM bias_review_items
+     GROUP BY status`,
+  );
   const totalProfiles = accountProfiles + anonymousProfiles;
   const totalResponses = savedResponses + anonymousResponses;
   const averageConfidence = confidenceRows[0]?.average === null
@@ -124,6 +140,10 @@ export async function GET() {
       totalResponses,
       questionCount,
       averageConfidence,
+      biasReviewItems,
+      openBiasReviewItems,
+      highSeverityBiasReviewItems,
+      biasReviewByStatus: Object.fromEntries(biasStatusRows.map((row) => [row.status, Number(row.count)])),
       accountProfilesByMode: Object.fromEntries(modeRows.map((row) => [row.mode, Number(row.count)])),
       accuracyRatings: ratingRows.map((row) => ({
         rating: row.accuracy_rating,
