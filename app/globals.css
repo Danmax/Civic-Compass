@@ -2800,7 +2800,7 @@ fieldset {
 .admin-table-panel td p { margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 8px; font-weight: 500; }
 .question-id { color: #9a7a3f; font-family: var(--font-serif), serif; font-size: 8px; }
 
-.category-tag { padding: 4px 7px; border-radius: 99px; font-size: 7px; text-transform: capitalize; }
+.category-tag { padding: 4px 7px; border-radius: 99px; font-size: 7px; font-weight: 700; line-height: 1; text-transform: capitalize; }
 .category-tag.violet { background: #eeebf3; color: #746285; }
 .category-tag.blue { background: #e6eef4; color: #547289; }
 .category-tag.gold { background: #f5eddc; color: #92702e; }
@@ -3214,13 +3214,21 @@ fieldset {
 .weight-matrix > div:not(.panel-header) {
   padding: 9px 0;
   display: grid;
-  grid-template-columns: 120px 1fr 35px;
+  grid-template-columns: minmax(105px, 120px) minmax(0, 1fr) 35px;
   gap: 12px;
   align-items: center;
   border-top: 1px solid #d8e6e8;
 }
 
+.weight-matrix .category-tag {
+  width: 100%;
+  min-height: 18px;
+  display: inline-flex;
+  align-items: center;
+}
+
 .weight-matrix i {
+  min-width: 0;
   height: 7px;
   background: #eef7f7;
   border-radius: 99px;
@@ -4436,6 +4444,10 @@ body {
 
 .interpretation p {
   color: #314653;
+}
+
+.category-tag.teal {
+  color: #ffffff;
 }
 
 .intro-strip p,

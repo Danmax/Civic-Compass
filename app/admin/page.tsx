@@ -24,7 +24,7 @@ import {
   SlidersHorizontal,
   Users,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CATEGORIES, DIMENSIONS, QUESTIONS, type CategoryKey, type DimensionKey } from "../data";
 
 const categoryColors: Record<string, string> = {
@@ -190,6 +190,8 @@ const categoryCounts = QUESTIONS.reduce((counts, question) => {
 }, {} as Record<CategoryKey, number>);
 
 export default function AdminPage() {
+  const newQuestionPanelRef = useRef<HTMLDivElement>(null);
+  const newQuestionInputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState("Overview");
   const [selectedQuestionId, setSelectedQuestionId] = useState(QUESTIONS[0].id);
@@ -247,6 +249,19 @@ export default function AdminPage() {
     ? (respondedRows.reduce((sum, row) => sum + row.skipRate, 0) / respondedRows.length).toFixed(1)
     : "0.0";
   const ratingTotal = metrics.accuracyRatings.reduce((sum, row) => sum + row.count, 0);
+  const questionFormReady = questionForm.statement.trim().length >= 12
+    && questionForm.context.trim().length >= 8
+    && questionForm.value.trim().length >= 2;
+
+  const openNewQuestionForm = () => {
+    setActive("Questions");
+    setQuestionsError("");
+
+    window.setTimeout(() => {
+      newQuestionPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      newQuestionInputRef.current?.focus();
+    }, 0);
+  };
 
   const loadReviewItems = async () => {
     setReviewLoading(true);
@@ -268,7 +283,7 @@ export default function AdminPage() {
     }
   };
 
-  const loadQuestions = async () => {
+  const loadQuestions = async (preferredQuestionId?: string) => {
     setQuestionsLoading(true);
     setQuestionsError("");
 
@@ -282,7 +297,15 @@ export default function AdminPage() {
 
       const questions = body.questions;
       setAdminQuestions(questions);
-      setSelectedQuestionId((current) => questions.some((question) => question.number === current) ? current : questions[0]?.number ?? current);
+      setSelectedQuestionId((current) => {
+        const preferredQuestion = preferredQuestionId
+          ? questions.find((question) => question.id === preferredQuestionId)
+          : null;
+
+        if (preferredQuestion) return preferredQuestion.number;
+
+        return questions.some((question) => question.number === current) ? current : questions[0]?.number ?? current;
+      });
     } catch (error) {
       setQuestionsError(error instanceof Error ? error.message : "Unable to load questions.");
     } finally {
@@ -343,6 +366,12 @@ export default function AdminPage() {
   };
 
   const createQuestion = async () => {
+    if (!questionFormReady) {
+      openNewQuestionForm();
+      setQuestionsError("Add a statement, context note, and value label before creating a draft.");
+      return;
+    }
+
     setQuestionSaving(true);
     setQuestionsError("");
 
@@ -359,7 +388,7 @@ export default function AdminPage() {
       }
 
       setQuestionForm({ statement: "", context: "", category: "institutions", value: "" });
-      await loadQuestions();
+      await loadQuestions(body.id);
     } catch (error) {
       setQuestionsError(error instanceof Error ? error.message : "Unable to create question.");
     } finally {
@@ -552,7 +581,7 @@ export default function AdminPage() {
           <div className="version-control">
             <span>Live version</span>
             <button>2026.2 <ChevronDown /></button>
-            <button className="admin-primary"><Plus /> New question</button>
+            <button className="admin-primary" onClick={openNewQuestionForm}><Plus /> New question</button>
           </div>
         </header>
 
@@ -613,8 +642,8 @@ export default function AdminPage() {
                 <div className="panel-header">
                   <div><span>Question editor</span><h3>Draft and review prompts</h3></div>
                   <div className="panel-actions">
-                    <button onClick={loadQuestions}><Settings2 /> Refresh</button>
-                    <button onClick={createQuestion} disabled={questionSaving}><Plus /> Create draft</button>
+                    <button onClick={() => loadQuestions()}><Settings2 /> Refresh</button>
+                    <button onClick={createQuestion} disabled={questionSaving || !questionFormReady}><Plus /> Create draft</button>
                   </div>
                 </div>
                 {questionsError && <div className="admin-empty inline"><AlertTriangle /><p>{questionsError}</p></div>}
@@ -656,9 +685,9 @@ export default function AdminPage() {
                         <button key={item} disabled={questionSaving} onClick={() => updateQuestionStatus(status as AdminQuestion["status"], item)}><CheckCircle2 /> {item}</button>
                       ))}
                     </div>
-                    <div className="question-create-box">
+                    <div className="question-create-box" ref={newQuestionPanelRef}>
                       <h4>Create draft question</h4>
-                      <input value={questionForm.statement} onChange={(event) => setQuestionForm((current) => ({ ...current, statement: event.target.value }))} placeholder="Statement" />
+                      <input ref={newQuestionInputRef} value={questionForm.statement} onChange={(event) => setQuestionForm((current) => ({ ...current, statement: event.target.value }))} placeholder="Statement" />
                       <input value={questionForm.context} onChange={(event) => setQuestionForm((current) => ({ ...current, context: event.target.value }))} placeholder="Context note" />
                       <input value={questionForm.value} onChange={(event) => setQuestionForm((current) => ({ ...current, value: event.target.value }))} placeholder="Value label" />
                       <select value={questionForm.category} onChange={(event) => setQuestionForm((current) => ({ ...current, category: event.target.value as CategoryKey }))}>
