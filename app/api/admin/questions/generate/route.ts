@@ -9,7 +9,7 @@ export const runtime = "nodejs";
 
 const CATEGORY_KEYS = ["economy", "immigration", "justice", "family", "equal", "rights", "institutions"] as const;
 const CATEGORY_SET = new Set<string>(CATEGORY_KEYS);
-const DEFAULT_MODEL = "gpt-5.6-sol";
+const DEFAULT_MODEL = "gpt-5.6-luna";
 
 type CategoryKey = typeof CATEGORY_KEYS[number];
 type ExistingQuestionRow = RowDataPacket & {
