@@ -88,6 +88,37 @@ type BiasReviewItem = {
   updatedAt: string;
 };
 
+type AdminQuestion = {
+  id: string;
+  number: number;
+  statement: string;
+  context: string;
+  value: string;
+  active: boolean;
+  status: "draft" | "in_review" | "approved" | "published" | "archived" | "rejected";
+  category: {
+    key: CategoryKey;
+    name: string;
+  };
+  health: {
+    responseCount: number;
+    skippedCount: number;
+    skipRate: number;
+    averageStrength: number | null;
+    polarization: number;
+  };
+  biasReviewStatus: string | null;
+  commentCount: number;
+  updatedAt: string;
+};
+
+type QuestionForm = {
+  statement: string;
+  context: string;
+  category: CategoryKey;
+  value: string;
+};
+
 const emptyMetrics: AdminMetrics = {
   users: 0,
   accountProfiles: 0,
@@ -112,14 +143,36 @@ const emptyMetrics: AdminMetrics = {
 
 const formatNumber = (value: number) => new Intl.NumberFormat("en-US").format(value);
 
-const healthScore = (statement: string, stat?: AdminMetrics["questionStats"][number]) => {
+const staticQuestionRows = QUESTIONS.map((question) => ({
+  id: `static-${question.id}`,
+  number: question.id,
+  statement: question.statement,
+  context: question.context,
+  value: question.value,
+  active: true,
+  status: "published" as const,
+  category: {
+    key: question.category,
+    name: CATEGORIES[question.category].name,
+  },
+  health: {
+    responseCount: 0,
+    skippedCount: 0,
+    skipRate: 0,
+    averageStrength: null,
+    polarization: 0,
+  },
+  biasReviewStatus: null,
+  commentCount: 0,
+  updatedAt: "",
+}));
+
+const healthScore = (statement: string, health?: AdminQuestion["health"]) => {
   const wordCount = statement.split(/\s+/).length;
   const clarity = Math.max(72, Math.min(99, 104 - wordCount - (statement.includes(",") ? 4 : 0)));
-  const responseCount = stat?.total ?? 0;
-  const skipRate = stat?.skipRate ?? 0;
-  const polarization = stat?.averageStrength === null || stat?.averageStrength === undefined
-    ? 0
-    : Math.round((stat.averageStrength / 3) * 100);
+  const responseCount = health?.responseCount ?? 0;
+  const skipRate = health?.skipRate ?? 0;
+  const polarization = health?.polarization ?? 0;
   const risk = responseCount === 0 ? "No data" : skipRate > 9 || polarization > 82 || clarity < 82 ? "Watch" : "Healthy";
   const flags = [
     responseCount === 0 && "Awaiting responses",
@@ -141,6 +194,17 @@ export default function AdminPage() {
   const [active, setActive] = useState("Overview");
   const [selectedQuestionId, setSelectedQuestionId] = useState(QUESTIONS[0].id);
   const [healthFilter, setHealthFilter] = useState("All");
+  const [adminQuestions, setAdminQuestions] = useState<AdminQuestion[]>(staticQuestionRows);
+  const [questionsLoading, setQuestionsLoading] = useState(true);
+  const [questionsError, setQuestionsError] = useState("");
+  const [questionSaving, setQuestionSaving] = useState(false);
+  const [questionComment, setQuestionComment] = useState("");
+  const [questionForm, setQuestionForm] = useState<QuestionForm>({
+    statement: "",
+    context: "",
+    category: "institutions",
+    value: "",
+  });
   const [metrics, setMetrics] = useState<AdminMetrics>(emptyMetrics);
   const [metricsLoading, setMetricsLoading] = useState(true);
   const [metricsError, setMetricsError] = useState("");
@@ -155,12 +219,11 @@ export default function AdminPage() {
     global: 0,
     justice: 0,
   });
-  const statsByQuestion = new Map(metrics.questionStats.map((stat) => [stat.questionNumber, stat]));
-  const healthRows = QUESTIONS.map((question, index) => ({
+  const healthRows = adminQuestions.map((question, index) => ({
     question,
     index,
-    status: "Live",
-    ...healthScore(question.statement, statsByQuestion.get(question.id)),
+    status: question.status,
+    ...healthScore(question.statement, question.health),
   }));
   const visible = healthRows
     .filter(({ question, risk, status }) => {
@@ -169,10 +232,13 @@ export default function AdminPage() {
       return matchesQuery && matchesFilter;
     })
     .slice(0, 10);
-  const selectedQuestion = QUESTIONS.find((q) => q.id === selectedQuestionId) ?? QUESTIONS[0];
+  const selectedQuestion = adminQuestions.find((q) => q.number === selectedQuestionId) ?? adminQuestions[0] ?? staticQuestionRows[0];
   const dimensionEntries = Object.entries(DIMENSIONS) as [DimensionKey, typeof DIMENSIONS[DimensionKey]][];
   const watchedQuestions = healthRows.filter((row) => row.risk === "Watch").slice(0, 6);
   const sectionLabel = active === "Overview" ? "Live MySQL counts for Civic Compass activity." : "Manage assessment content, scoring, and quality controls.";
+  const publishedCount = adminQuestions.filter((question) => question.status === "published").length;
+  const draftCount = adminQuestions.filter((question) => question.status === "draft").length;
+  const reviewQuestionCount = adminQuestions.filter((question) => question.status === "in_review").length;
   const watchCount = healthRows.filter((row) => row.risk === "Watch").length;
   const noDataCount = healthRows.filter((row) => row.risk === "No data").length;
   const averageClarity = Math.round(healthRows.reduce((sum, row) => sum + row.clarity, 0) / healthRows.length);
@@ -199,6 +265,132 @@ export default function AdminPage() {
       setReviewError(error instanceof Error ? error.message : "Unable to load bias review items.");
     } finally {
       setReviewLoading(false);
+    }
+  };
+
+  const loadQuestions = async () => {
+    setQuestionsLoading(true);
+    setQuestionsError("");
+
+    try {
+      const response = await fetch("/api/admin/questions");
+      const body = await response.json() as { ok?: boolean; questions?: AdminQuestion[]; error?: string };
+
+      if (!response.ok || !body.ok || !body.questions) {
+        throw new Error(body.error ?? "Unable to load questions.");
+      }
+
+      const questions = body.questions;
+      setAdminQuestions(questions);
+      setSelectedQuestionId((current) => questions.some((question) => question.number === current) ? current : questions[0]?.number ?? current);
+    } catch (error) {
+      setQuestionsError(error instanceof Error ? error.message : "Unable to load questions.");
+    } finally {
+      setQuestionsLoading(false);
+    }
+  };
+
+  const updateQuestion = async (payload: Partial<QuestionForm>) => {
+    if (!selectedQuestion?.id) return;
+
+    setQuestionSaving(true);
+    setQuestionsError("");
+
+    try {
+      const response = await fetch(`/api/admin/questions/${selectedQuestion.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = await response.json() as { ok?: boolean; error?: string };
+
+      if (!response.ok || !body.ok) {
+        throw new Error(body.error ?? "Unable to update question.");
+      }
+
+      await loadQuestions();
+    } catch (error) {
+      setQuestionsError(error instanceof Error ? error.message : "Unable to update question.");
+    } finally {
+      setQuestionSaving(false);
+    }
+  };
+
+  const updateQuestionStatus = async (status: AdminQuestion["status"], note: string) => {
+    if (!selectedQuestion?.id) return;
+
+    setQuestionSaving(true);
+    setQuestionsError("");
+
+    try {
+      const response = await fetch(`/api/admin/questions/${selectedQuestion.id}/status`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, note }),
+      });
+      const body = await response.json() as { ok?: boolean; error?: string };
+
+      if (!response.ok || !body.ok) {
+        throw new Error(body.error ?? "Unable to update question status.");
+      }
+
+      await loadQuestions();
+    } catch (error) {
+      setQuestionsError(error instanceof Error ? error.message : "Unable to update question status.");
+    } finally {
+      setQuestionSaving(false);
+    }
+  };
+
+  const createQuestion = async () => {
+    setQuestionSaving(true);
+    setQuestionsError("");
+
+    try {
+      const response = await fetch("/api/admin/questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(questionForm),
+      });
+      const body = await response.json() as { ok?: boolean; id?: string; error?: string };
+
+      if (!response.ok || !body.ok) {
+        throw new Error(body.error ?? "Unable to create question.");
+      }
+
+      setQuestionForm({ statement: "", context: "", category: "institutions", value: "" });
+      await loadQuestions();
+    } catch (error) {
+      setQuestionsError(error instanceof Error ? error.message : "Unable to create question.");
+    } finally {
+      setQuestionSaving(false);
+    }
+  };
+
+  const addQuestionComment = async () => {
+    if (!selectedQuestion?.id || !questionComment.trim()) return;
+
+    setQuestionSaving(true);
+    setQuestionsError("");
+
+    try {
+      const response = await fetch(`/api/admin/questions/${selectedQuestion.id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ comment: questionComment }),
+      });
+      const body = await response.json() as { ok?: boolean; error?: string };
+
+      if (!response.ok || !body.ok) {
+        throw new Error(body.error ?? "Unable to add question comment.");
+      }
+
+      setQuestionComment("");
+      await loadQuestions();
+    } catch (error) {
+      setQuestionsError(error instanceof Error ? error.message : "Unable to add question comment.");
+    } finally {
+      setQuestionSaving(false);
     }
   };
 
@@ -306,6 +498,7 @@ export default function AdminPage() {
 
     void loadMetrics();
     void loadReviewItems();
+    void loadQuestions();
 
     return () => {
       activeRequest = false;
@@ -420,49 +613,61 @@ export default function AdminPage() {
                 <div className="panel-header">
                   <div><span>Question editor</span><h3>Draft and review prompts</h3></div>
                   <div className="panel-actions">
-                    <button><Settings2 /> Bulk actions</button>
-                    <button><Plus /> Create draft</button>
+                    <button onClick={loadQuestions}><Settings2 /> Refresh</button>
+                    <button onClick={createQuestion} disabled={questionSaving}><Plus /> Create draft</button>
                   </div>
                 </div>
+                {questionsError && <div className="admin-empty inline"><AlertTriangle /><p>{questionsError}</p></div>}
                 <div className="editor-grid">
                   <div className="question-picker">
-                    {QUESTIONS.slice(0, 12).map((question) => (
+                    {adminQuestions.slice(0, 18).map((question) => (
                       <button
                         key={question.id}
-                        className={selectedQuestion.id === question.id ? "active" : ""}
-                        onClick={() => setSelectedQuestionId(question.id)}
+                        className={selectedQuestion.number === question.number ? "active" : ""}
+                        onClick={() => setSelectedQuestionId(question.number)}
                       >
-                        <span>Q{question.id.toString().padStart(2, "0")}</span>
+                        <span>Q{question.number.toString().padStart(2, "0")} · {question.status}</span>
                         <p>{question.statement}</p>
                       </button>
                     ))}
                   </div>
                   <div className="editor-form">
-                    <label><span>Statement</span><textarea value={selectedQuestion.statement} readOnly /></label>
-                    <label><span>Context note</span><textarea value={selectedQuestion.context} readOnly /></label>
+                    <label><span>Statement</span><textarea key={`${selectedQuestion.id}-statement`} defaultValue={selectedQuestion.statement} onBlur={(event) => event.target.value !== selectedQuestion.statement && updateQuestion({ statement: event.target.value })} readOnly={questionSaving} /></label>
+                    <label><span>Context note</span><textarea key={`${selectedQuestion.id}-context`} defaultValue={selectedQuestion.context} onBlur={(event) => event.target.value !== selectedQuestion.context && updateQuestion({ context: event.target.value })} readOnly={questionSaving} /></label>
                     <div className="editor-meta">
-                      <label><span>Category</span><input value={CATEGORIES[selectedQuestion.category].name} readOnly /></label>
-                      <label><span>Editorial status</span><input value="Editorial review" readOnly /></label>
+                      <label><span>Category</span><input value={selectedQuestion.category.name} readOnly /></label>
+                      <label><span>Editorial status</span><input value={selectedQuestion.status} readOnly /></label>
                     </div>
                     <div className="weight-preview">
-                      <h4>Dimension weights</h4>
-                      {selectedQuestion.weights.map((weight) => (
-                        <div key={weight.dimension}>
-                          <span>{DIMENSIONS[weight.dimension].name}</span>
-                          <b>{weight.weight > 0 ? "+" : ""}{weight.weight.toFixed(2)}</b>
-                        </div>
-                      ))}
+                      <h4>Health metrics</h4>
+                      <div><span>Responses</span><b>{selectedQuestion.health.responseCount}</b></div>
+                      <div><span>Skipped</span><b>{selectedQuestion.health.skippedCount}</b></div>
+                      <div><span>Skip rate</span><b>{selectedQuestion.health.skipRate.toFixed(1)}%</b></div>
+                      <div><span>Polarization</span><b>{selectedQuestion.health.polarization}</b></div>
                     </div>
                     <div className="governance-checklist">
-                      <h4>Release checks</h4>
+                      <h4>Question workflow</h4>
                       {[
-                        "Plain-language wording reviewed",
-                        "Sensitive-topic neutrality checked",
-                        "Dimension weights tested",
-                        "Educational context attached",
-                      ].map((item, index) => (
-                        <span key={item} className={index < 3 ? "done" : ""}><CheckCircle2 /> {item}</span>
+                        ["Submit review", "in_review"],
+                        ["Approve", "approved"],
+                        ["Publish", "published"],
+                        ["Archive", "archived"],
+                      ].map(([item, status]) => (
+                        <button key={item} disabled={questionSaving} onClick={() => updateQuestionStatus(status as AdminQuestion["status"], item)}><CheckCircle2 /> {item}</button>
                       ))}
+                    </div>
+                    <div className="question-create-box">
+                      <h4>Create draft question</h4>
+                      <input value={questionForm.statement} onChange={(event) => setQuestionForm((current) => ({ ...current, statement: event.target.value }))} placeholder="Statement" />
+                      <input value={questionForm.context} onChange={(event) => setQuestionForm((current) => ({ ...current, context: event.target.value }))} placeholder="Context note" />
+                      <input value={questionForm.value} onChange={(event) => setQuestionForm((current) => ({ ...current, value: event.target.value }))} placeholder="Value label" />
+                      <select value={questionForm.category} onChange={(event) => setQuestionForm((current) => ({ ...current, category: event.target.value as CategoryKey }))}>
+                        {Object.entries(CATEGORIES).map(([key, category]) => <option key={key} value={key}>{category.name}</option>)}
+                      </select>
+                    </div>
+                    <div className="review-comment-box question-comment-box">
+                      <input value={questionComment} onChange={(event) => setQuestionComment(event.target.value)} placeholder="Add review comment" />
+                      <button onClick={addQuestionComment} disabled={questionSaving}>Comment</button>
                     </div>
                   </div>
                 </div>
@@ -616,9 +821,9 @@ export default function AdminPage() {
                 <div className="panel-header"><div><span>Response signals</span><h3>Create review items from live data</h3></div><button onClick={loadReviewItems}>Refresh</button></div>
                 {watchedQuestions.length ? watchedQuestions.map(({ question, flags, skipRate, polarization }) => (
                   <div className="review-item" key={question.id}>
-                    <span>Q{question.id.toString().padStart(2, "0")}</span>
+                    <span>Q{question.number.toString().padStart(2, "0")}</span>
                     <div><strong>{question.statement}</strong><p>{flags.join(", ")} · {skipRate.toFixed(1)}% skipped · {polarization} response strength</p></div>
-                    <button onClick={() => createReviewItem(question.id, flags.join(", "), polarization > 82 ? "high" : "medium")}>Create</button>
+                    <button onClick={() => createReviewItem(question.number, flags.join(", "), polarization > 82 ? "high" : "medium")}>Create</button>
                   </div>
                 )) : (
                   <div className="admin-empty inline"><CheckCircle2 /><p>No live response signals currently exceed the review threshold.</p></div>
@@ -703,8 +908,8 @@ export default function AdminPage() {
                   {visible.map(({ question, status, clarity, skipRate, polarization, flags, risk }) => {
                     return (
                       <tr key={question.id}>
-                        <td><span className="question-id">Q{question.id.toString().padStart(2, "0")}</span><p>{question.statement}</p></td>
-                        <td><span className={`category-tag ${categoryColors[question.category]}`}>{question.category}</span></td>
+                        <td><span className="question-id">Q{question.number.toString().padStart(2, "0")}</span><p>{question.statement}</p></td>
+                        <td><span className={`category-tag ${categoryColors[question.category.key]}`}>{question.category.key}</span></td>
                         <td><span className={`status-dot ${status.toLowerCase().replace(" ", "-")}`}><i />{status}</span></td>
                         <td><span className={`health-pill ${risk.toLowerCase()}`}>{clarity}%</span></td>
                         <td>{skipRate.toFixed(1)}%</td>
@@ -714,14 +919,14 @@ export default function AdminPage() {
                             {(flags.length ? flags : ["No active flags"]).map((flag) => <span key={flag}>{flag}</span>)}
                           </div>
                         </td>
-                        <td><button className="row-more" onClick={() => setSelectedQuestionId(question.id)}><MoreHorizontal /></button></td>
+                        <td><button className="row-more" onClick={() => setSelectedQuestionId(question.number)}><MoreHorizontal /></button></td>
                       </tr>
                     );
                   })}
                 </tbody>
               </table>
             </div>
-            <div className="table-footer"><span>Showing {visible.length} of {QUESTIONS.length} questions · {watchCount} on watch list · {noDataCount} awaiting responses</span><button>Export health report <ArrowLeft /></button></div>
+            <div className="table-footer"><span>Showing {visible.length} of {adminQuestions.length} questions · {watchCount} on watch list · {noDataCount} awaiting responses</span><button>Export health report <ArrowLeft /></button></div>
           </section>}
 
           {(active === "Overview" || active === "Analytics") && <section className="admin-bottom-grid">

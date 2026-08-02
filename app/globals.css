@@ -3344,6 +3344,51 @@ fieldset {
   border-color: #dfe3dc;
 }
 
+.question-create-box {
+  margin-top: 14px;
+  padding-top: 14px;
+  display: grid;
+  gap: 8px;
+  border-top: 1px solid #d8e6e8;
+}
+
+.question-create-box h4 {
+  margin: 0;
+  color: var(--forest);
+  font-size: 11px;
+}
+
+.question-create-box input,
+.question-create-box select {
+  width: 100%;
+  min-height: 34px;
+  padding: 0 10px;
+  background: white;
+  color: #10212b;
+  border: 1px solid #cddfe3;
+  border-radius: 6px;
+  font-size: 9px;
+}
+
+.question-comment-box {
+  margin-top: 12px;
+}
+
+.governance-checklist button {
+  min-height: 30px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f6f7f3;
+  color: var(--forest);
+  border: 1px solid #dfe3dc;
+  border-radius: 6px;
+  font-size: 8px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .education-card small {
   color: #435863;
   font-size: 8px;

@@ -116,6 +116,10 @@ Account routes:
 - `/api/admin/bias-review` - list or create persisted bias review items
 - `/api/admin/bias-review/[id]` - assign, approve, request revision, or resolve review items
 - `/api/admin/bias-review/[id]/comments` - list or add review comments
+- `/api/admin/questions` - list live questions with health metrics or create draft questions
+- `/api/admin/questions/[id]` - update editable question fields
+- `/api/admin/questions/[id]/status` - move questions through draft, review, approval, publish, archive, or rejection
+- `/api/admin/questions/[id]/comments` - list or add question review comments
 
 Run verification:
 
@@ -157,8 +161,8 @@ Before production use, the admin portal should be backed by authenticated APIs, 
 - Percentiles are illustrative and not demographic predictions.
 - The admin portal does not yet persist edits to a backend.
 - The admin portal route is protected by login and requires `admin` or `researcher`
-  role. Bias review is persisted in MySQL; content editing screens are still
-  read-only prototypes.
+  role. Bias review and question workflow are persisted in MySQL; broader content
+  editing screens are still read-only prototypes.
 - Anonymous research snapshots are persisted only when a user explicitly submits
   one from the results screen.
 - Account-saved assessment history is persisted only for logged-in users who
